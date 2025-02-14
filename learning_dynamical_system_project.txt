@@ -1,0 +1,13 @@
+Tasks that everyone has to do:
+-read the two papers and write down questions to discuss (any question is very important)
+-understand the relation between c_t (value of ambiguity set) and K_t (kalman gain)
+
+Sasa obradovic:
+-translation of Zorzi's code
+
+Tommaso tubaldo:
+-understand kalmannet code and see what can be reused for our purpose
+
+
+Riccardo Zattra:
+-understand kalmannet code and see what can be reused for our purpose
