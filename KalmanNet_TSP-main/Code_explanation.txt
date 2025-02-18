@@ -1,0 +1,28 @@
+File " Main_linear_CA.py "
+-Remember that CA stands for "constant acceleration" while CV stands for "constant velocity"
+-Lines 33-83 are listing settings for the neural network (see file config.py to have an idea of what these parameters are)
+	for example for me it is not clear the parameter T (explained a little at pag. 6 section D of the article)
+	other code in this segment is quite easy to be understood
+-Lines 85-132 here there is the dataset generation the loss as explained in the paper (pag.6) is related to the state
+	lines 85-95 just set the type of loss we want
+	lines 96-109 here we create the model to generate the data and the one to use in the kalman filter
+	line 112 can be of interest because there is a function that is used to generate the data (see file utils.py) inside this the big part of the job is made by 
+		GenerateBatch() which is file "Linear_sysmdl.py"
+	line 114 what are original data? They take them from the file *.pt in the folder but till now it is not clear to me why we need them
+
+-Lines 136-142 they evaluate the performances of a classical Kalman filter (see file KalmanFilter_test.py)
+-Lines 145-174 they start to build the neural network followed by training and test 
+	the library KalmanNet_nn I think can be of great inspiration for what we have to do with also the file Pipeline_EKF.py
+
+
+File "Linear_sysmdl.py"
+-Lines 17-58 there are attributes of the class
+-After that there are functions till now the most important one are "Generate_sequence" and "Generate_batch,"
+
+File "KalmanFilter_test.py"
+-Function KFTest, line 10 is defining the classical loss function the mean of the error squared
+
+
+Questions:
+-Based on the presentation made in class it seems that we should try to implement a DNN (deep neural network) instead of a RNN (recurrent neural network) 
+	is it correct?

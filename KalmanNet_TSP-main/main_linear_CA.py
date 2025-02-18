@@ -28,6 +28,7 @@ print("Current Time =", strTime)
 path_results = 'KNet/'
 
 print("Pipeline Start")
+input()
 ####################################
 ### Generative Parameters For CA ###
 ####################################
@@ -47,7 +48,7 @@ args.T_test = 100
 KnownRandInit_train = True # if true: use known random init for training, else: model is agnostic to random init
 KnownRandInit_cv = True
 KnownRandInit_test = True
-args.use_cuda = True # use GPU or not
+args.use_cuda = False # use GPU or not
 args.n_steps = 4000
 args.n_batch = 10
 args.lr = 1e-4
@@ -73,16 +74,17 @@ if(KnownRandInit_train or KnownRandInit_cv or KnownRandInit_test):
 else:
    std_feed = 1
 
-m1x_0 = torch.zeros(m) # Initial State
+m1x_0 = torch.zeros(m) # Initial State, m is the dimension of the state
 m1x_0_cv = torch.zeros(m_cv) # Initial State for CV
 m2x_0 = std_feed * std_feed * torch.eye(m) # Initial Covariance for feeding to filters and KNet
 m2x_0_gen = std_gen * std_gen * torch.eye(m) # Initial Covariance for generating dataset
 m2x_0_cv = std_feed * std_feed * torch.eye(m_cv) # Initial Covariance for CV
+input()
 
 #############################
 ###  Dataset Generation   ###
 #############################
-### PVA or P
+### PVA or P (position,velocity and accelerattion or only position)
 Loss_On_AllState = False # if false: only calculate loss on position
 Train_Loss_On_AllState = True # if false: only calculate training loss on position
 CV_model = False # if true: use CV model, else: use CA model
@@ -93,11 +95,11 @@ DatafileName = 'decimated_dt1e-2_T100_r0_randnInit.pt'
 ####################
 ### System Model ###
 ####################
-# Generation model (CA)
+# Generation model (CA) (I think this will be used to generate the data)
 sys_model_gen = SystemModel(F_gen, Q_gen, H_onlyPos, R_onlyPos, args.T, args.T_test)
 sys_model_gen.InitSequence(m1x_0, m2x_0_gen)# x0 and P0
 
-# Feed model (to KF, KalmanNet) 
+# Feed model (to KF, KalmanNet)  (these are used for the dynamics)
 if CV_model:
    H_onlyPos = torch.tensor([[1, 0]]).float()
    sys_model = SystemModel(F_CV, Q_CV, H_onlyPos, R_onlyPos, args.T, args.T_test)
@@ -108,8 +110,10 @@ else:
 
 print("Start Data Gen")
 utils.DataGen(args, sys_model_gen, DatafolderName+DatafileName)
+input()
 print("Load Original Data")
 [train_input, train_target, cv_input, cv_target, test_input, test_target,train_init,cv_init,test_init] = torch.load(DatafolderName+DatafileName, map_location=device)
+input()
 if CV_model:# set state as (p,v) instead of (p,v,a)
    train_target = train_target[:,0:m_cv,:]
    train_init = train_init[:,0:m_cv]
@@ -127,6 +131,7 @@ print("cvset state x size:",cv_target.size())
 print("cvset observation y size:",cv_input.size())
 
 print("Compute Loss on All States (if false, loss on position only):", Loss_On_AllState)
+input()
 ##############################
 ### Evaluate Kalman Filter ###
 ##############################

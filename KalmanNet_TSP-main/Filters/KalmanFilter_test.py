@@ -6,7 +6,7 @@ from Filters.Linear_KF import KalmanFilter
 def KFTest(args, SysModel, test_input, test_target, allStates=True,\
      randomInit = False, test_init=None, test_lengthMask=None):
 
-    # LOSS
+    # LOSS 
     loss_fn = nn.MSELoss(reduction='mean')
 
     # MSE [Linear]
