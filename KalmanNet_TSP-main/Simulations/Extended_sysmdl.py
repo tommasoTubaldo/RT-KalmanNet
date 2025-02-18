@@ -23,8 +23,8 @@ class SystemModel:
         ####################
         ### Motion Model ###
         ####################
-        self.f = f
-        self.m = m
+        self.f = f 
+        self.m = m 
         self.Q = Q
         #########################
         ### Observation Model ###
@@ -43,17 +43,17 @@ class SystemModel:
         ### Covariance Priors ###
         #########################
         if prior_Q is None:
-            self.prior_Q = torch.eye(self.m)
+            self.prior_Q = torch.eye(self.m) #should be Q0_hat see paper page 6
         else:
             self.prior_Q = prior_Q
 
         if prior_Sigma is None:
-            self.prior_Sigma = torch.zeros((self.m, self.m))
+            self.prior_Sigma = torch.zeros((self.m, self.m)) #should be sigma0_hat see paper page 6
         else:
             self.prior_Sigma = prior_Sigma
 
         if prior_S is None:
-            self.prior_S = torch.eye(self.n)
+            self.prior_S = torch.eye(self.n) #should be S0_hat see paper page 6 (there should be a typo)
         else:
             self.prior_S = prior_S
 

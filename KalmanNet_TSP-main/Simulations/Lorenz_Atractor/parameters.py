@@ -13,8 +13,8 @@ from torch import autograd
 #########################
 ### Design Parameters ###
 #########################
-m = 3
-n = 3
+m = 3 #dimension of the state
+n = 3 #dimension of the output
 variance = 0
 m1x_0 = torch.ones(m, 1) 
 m2x_0 = 0 * 0 * torch.eye(m)
@@ -24,12 +24,13 @@ delta_t_gen =  1e-5
 delta_t = 0.02
 ratio = delta_t_gen/delta_t
 
-### Taylor expansion order
+### Taylor expansion order (see paper pag.10 formulae 20 )
+#see also state evolution mismatch pag.11
 J = 5 
 J_mod = 2
 
-### Angle of rotation in the 3 axes
-roll_deg = yaw_deg = pitch_deg = 1
+### Angle of rotation in the 3 axes (see state observation rotation mismatch pag.11)
+roll_deg = yaw_deg = pitch_deg = 1 #
 
 roll = roll_deg * (math.pi/180)
 yaw = yaw_deg * (math.pi/180)

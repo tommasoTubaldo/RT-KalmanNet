@@ -32,17 +32,18 @@ print("Current Time =", strTime)
 ###################
 args = config.general_settings()
 ### dataset parameters
-args.N_E = 1000
-args.N_CV = 100
-args.N_T = 200
-args.T = 100
-args.T_test = 100
+args.N_E = 1000 #length of training dataset 
+args.N_CV = 100 #length of validation dataset
+args.N_T = 200 #length of test dataset
+args.T = 100 #input sequence length 
+args.T_test = 100 #input test sequence length 
+
 ### training parameters
-args.use_cuda = True # use GPU or not
-args.n_steps = 2000
-args.n_batch = 30
-args.lr = 1e-3
-args.wd = 1e-3
+args.use_cuda = False # use GPU or not (True = use GPU)
+args.n_steps =  2000 #number of training steps (default: 1000)
+args.n_batch = 30 #input batch size for training (default: 20)
+args.lr = 1e-3 #learning rate (default: 1e-3)
+args.wd = 1e-3 #weight decay (default: 1e-4)
 
 if args.use_cuda:
    if torch.cuda.is_available():
@@ -58,22 +59,25 @@ offset = 0 # offset for the data
 chop = False # whether to chop data sequences into shorter sequences
 path_results = 'KNet/'
 DatafolderName = 'Simulations/Lorenz_Atractor/data' + '/'
-switch = 'partial' # 'full' or 'partial' or 'estH'
-   
+#flag that will be used later on in the code
+switch = 'partial' # 'full' or 'partial' or 'estH'v 
+
+input() #to be deleted added only to block the code
 # noise q and r
 r2 = torch.tensor([0.1]) # [100, 10, 1, 0.1, 0.01]
 vdB = -20 # ratio v=q2/r2
-v = 10**(vdB/10)
-q2 = torch.mul(v,r2)
+v = 10**(vdB/10) #vdb = 10*log(q2/r2)
+q2 = torch.mul(v,r2) #see paper pag. 8 
 
-Q = q2[0] * Q_structure
-R = r2[0] * R_structure
+Q = q2[0] * Q_structure #defining the transition matrix noise
+R = r2[0] * R_structure #defining the output matrix noise
 
 print("1/r2 [dB]: ", 10 * torch.log10(1/r2[0]))
 print("1/q2 [dB]: ", 10 * torch.log10(1/q2[0]))
+input();
 
 traj_resultName = ['traj_lorDT_rq1030_T100.pt']
-dataFileName = ['data_lor_v20_rq1030_T100.pt']
+dataFileName = ['data_lor_v20_rq1030_T100.pt'] #used to load data below
 
 #########################################
 ###  Generate and load data DT case   ###
