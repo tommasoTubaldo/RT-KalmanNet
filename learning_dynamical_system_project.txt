@@ -16,3 +16,4 @@ Riccardo Zattra:
 Question to be answered:
 1) Is Extended_sysmdl.py the library to be used to implemente the synthetic NL model? (For me (ricky) it seems this one)
 2) How are we going to generate data from the NL model? (I think (ricky) there are functions in Extended_sysmdl.py)
+3) Relation between the C_t and K_t kalman gain
