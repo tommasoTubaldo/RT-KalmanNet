@@ -18,4 +18,5 @@ Question to be answered:
 2) How are we going to generate data from the NL model? (I think (ricky) there are functions in Extended_sysmdl.py)
 3) Relation between the C_t and K_t kalman gain
 4) line 54 file parameters.py of folder lorenz attractor what is " ### Auxiliar MultiDimensional Tensor B and C (they make A --> Differential equation matrix)"?
+5) check line 114 file main_lor_DT.py what the variable sys_model_pass2 does?
 
