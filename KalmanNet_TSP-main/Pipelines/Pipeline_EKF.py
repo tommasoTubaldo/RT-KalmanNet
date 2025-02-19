@@ -23,10 +23,10 @@ class Pipeline_EKF:
     def save(self):
         torch.save(self, self.PipelineName)
 
-    def setssModel(self, ssModel):
+    def setssModel(self, ssModel):#this set the state space model
         self.ssModel = ssModel
 
-    def setModel(self, model):
+    def setModel(self, model):#this set the model of the neural network
         self.model = model
 
     def setTrainingParams(self, args):
@@ -53,10 +53,11 @@ class Pipeline_EKF:
         MaskOnState=False, randomInit=False,cv_init=None,train_init=None,\
         train_lengthMask=None,cv_lengthMask=None):
 
-        self.N_E = len(train_input)
-        self.N_CV = len(cv_input)
-
-        self.MSE_cv_linear_epoch = torch.zeros([self.N_steps])
+        self.N_E = len(train_input) #length of training dataset
+        self.N_CV = len(cv_input) ##length of cross validation dataset
+        
+        #prepare memory to save the loss in linear and log scale at the various iterations
+        self.MSE_cv_linear_epoch = torch.zeros([self.N_steps]) 
         self.MSE_cv_dB_epoch = torch.zeros([self.N_steps])
 
         self.MSE_train_linear_epoch = torch.zeros([self.N_steps])
@@ -74,16 +75,19 @@ class Pipeline_EKF:
         self.MSE_cv_dB_opt = 1000
         self.MSE_cv_idx_opt = 0
 
-        for ti in range(0, self.N_steps):
+        for ti in range(0, self.N_steps): #just train for the number of specified steps
 
             ###############################
             ### Training Sequence Batch ###
             ###############################
-            self.optimizer.zero_grad()
+            self.optimizer.zero_grad() #it is needed to set at zero at every iteration the gradient so that it doesn't accumulate
             # Training Mode
-            self.model.train()
+            #this is just to set that we are doing training, for examble here some layers like the dropout one deactivate some
+            #neurons to prevent overfitting but in the inference or validation phase it use all of them. By calling this method 
+            #basically we change the behaviour of some particular layers
+            self.model.train()  
             self.model.batch_size = self.N_B
-            # Init Hidden State
+            # Init Hidden State (see KalmanNet_nn.py to see what it does)
             self.model.init_hidden_KNet()
 
             # Init Training Batch tensors

@@ -120,7 +120,7 @@ loss_obs = nn.MSELoss(reduction='mean')
 MSE_obs_linear_arr = torch.empty(N_T)# MSE [Linear]
 
 for j in range(0, N_T): 
-   reversed_target = torch.matmul(H_Rotate_inv, test_input[j])      
+   reversed_target = torch.matmul(H_Rotate_inv.to(device), test_input[j].to(device))#here I added .to(device) to move both the two obejects on the GPU
    MSE_obs_linear_arr[j] = loss_obs(reversed_target, test_target[j]).item()
 MSE_obs_linear_avg = torch.mean(MSE_obs_linear_arr)
 MSE_obs_dB_avg = 10 * torch.log10(MSE_obs_linear_avg)
@@ -170,11 +170,11 @@ if switch == 'full':
    KNet_model = KalmanNetNN()
    KNet_model.NNBuild(sys_model, args)
    # ## Train Neural Network
-   KNet_Pipeline = Pipeline_EKF(strTime, "KNet", "KNet")
+   KNet_Pipeline = Pipeline_EKF(strTime, "KNet", "KNet") #create the object and set some path to save data
    KNet_Pipeline.setssModel(sys_model)
    KNet_Pipeline.setModel(KNet_model)
-   print("Number of trainable parameters for KNet:",sum(p.numel() for p in KNet_model.parameters() if p.requires_grad))
-   KNet_Pipeline.setTrainingParams(args) 
+   print("Number of trainable parameters for KNet:",sum(p.numel() for p in KNet_model.parameters() if p.requires_grad)) #note parameters() è un metodo di pytorch
+   KNet_Pipeline.setTrainingParams(args) #set parameters of training like N_steps,learningrate,..,optimizer and loss function
    if(chop):
       [MSE_cv_linear_epoch, MSE_cv_dB_epoch, MSE_train_linear_epoch, MSE_train_dB_epoch] = KNet_Pipeline.NNTrain(sys_model, cv_input, cv_target, train_input, train_target, path_results,randomInit=True,train_init=train_init)
    else:
@@ -191,8 +191,8 @@ elif switch == 'partial':
    ####################
    ## Build Neural Network
    print("KNet with observation model mismatch")
-   KNet_model = KalmanNetNN()
-   KNet_model.NNBuild(sys_model_partial, args)
+   KNet_model = KalmanNetNN() #this just create the object
+   KNet_model.NNBuild(sys_model_partial, args) #this create the network depicted in the paper pag.6
    ## Train Neural Network
    KNet_Pipeline = Pipeline_EKF(strTime, "KNet", "KNet")
    KNet_Pipeline.setssModel(sys_model_partial)

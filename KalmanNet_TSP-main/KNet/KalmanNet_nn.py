@@ -20,7 +20,7 @@ class KalmanNetNN(torch.nn.Module):
         else:
             self.device = torch.device('cpu')
 
-        self.InitSystemDynamics(SysModel.f, SysModel.h, SysModel.m, SysModel.n)
+        self.InitSystemDynamics(SysModel.f, SysModel.h, SysModel.m, SysModel.n) #just set f,h,m,n
 
         # Number of neurons in the 1st hidden layer
         #H1_KNet = (SysModel.m + SysModel.n) * (10) * 8
@@ -28,6 +28,7 @@ class KalmanNetNN(torch.nn.Module):
         # Number of neurons in the 2nd hidden layer
         #H2_KNet = (SysModel.m * SysModel.n) * 1 * (4)
 
+        #this initialize the network depicted at pag.6
         self.InitKGainNet(SysModel.prior_Q, SysModel.prior_Sigma, SysModel.prior_S, args)
 
     ######################################
@@ -38,6 +39,7 @@ class KalmanNetNN(torch.nn.Module):
         self.seq_len_input = 1 # KNet calculates time-step by time-step
         self.batch_size = args.n_batch # Batch size
 
+        #these lines move the tensors to the device (GPU or CPU) specified in the caller fucntion
         self.prior_Q = prior_Q.to(self.device)
         self.prior_Sigma = prior_Sigma.to(self.device)
         self.prior_S = prior_S.to(self.device)
@@ -45,8 +47,8 @@ class KalmanNetNN(torch.nn.Module):
 
 
         # GRU to track Q
-        self.d_input_Q = self.m * args.in_mult_KNet
-        self.d_hidden_Q = self.m ** 2
+        self.d_input_Q = self.m * args.in_mult_KNet #define dimension of the input (in_mult_Knet = 5 default)
+        self.d_hidden_Q = self.m ** 2 #dimension of the hidden layer of the GRU
         self.GRU_Q = nn.GRU(self.d_input_Q, self.d_hidden_Q).to(self.device)
 
         # GRU to track Sigma
