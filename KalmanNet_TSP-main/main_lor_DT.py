@@ -39,8 +39,8 @@ args.T = 100 #input sequence length
 args.T_test = 100 #input test sequence length 
 
 ### training parameters
-args.use_cuda = False # use GPU or not (True = use GPU)
-args.n_steps =  2000 #number of training steps (default: 1000)
+args.use_cuda = True # use GPU or not (True = use GPU)
+args.n_steps =  30 #number of training steps (default: 1000) 2000
 args.n_batch = 30 #input batch size for training (default: 20)
 args.lr = 1e-3 #learning rate (default: 1e-3)
 args.wd = 1e-3 #weight decay (default: 1e-4)
@@ -87,7 +87,6 @@ sys_model.InitSequence(m1x_0, m2x_0)# x0 and P0
 print("Start Data Gen")
 DataGen(args, sys_model, DatafolderName + dataFileName[0])
 print("Data Load")
-input()
 print(dataFileName[0])
 [train_input_long,train_target_long, cv_input, cv_target, test_input, test_target,_,_,_] =  torch.load(DatafolderName + dataFileName[0], map_location=device)  
 if chop: 
@@ -185,6 +184,7 @@ if switch == 'full':
 
 ####################################################################################
 elif switch == 'partial':
+   input("partial");
    ## KNet with model mismatch ####################################################################################
    ###################
    ## KNet partial ###

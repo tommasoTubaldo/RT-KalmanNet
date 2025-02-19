@@ -12,6 +12,9 @@ from Simulations.Synthetic_NL_model.parameters import Q_structure, R_structure,m
     f,h
 from Simulations.Extended_sysmdl import SystemModel
 from Simulations.utils import DataGen
+from KNet.KalmanNet_nn import KalmanNetNN
+from Pipelines.Pipeline_EKF import Pipeline_EKF
+from Filters.EKF_test import EKFTest
 
 print("Pipeline Start")
 ################
@@ -36,8 +39,8 @@ args.T = 100 #input sequence length (see paper pag.10 section c)
 args.T_test = 100 #input test sequence length (I kept this length there is no specificagtion in the paper)
 
 ### training parameters (I kept all these parameters I found them in the Lorenz attractor main file)
-args.use_cuda = False # use GPU or not (True = use GPU)
-args.n_steps =  2000 #number of training steps (default: 1000)
+args.use_cuda = True # use GPU or not (True = use GPU)
+args.n_steps =  200 #number of training steps (default: 1000)
 args.n_batch = 30 #input batch size for training (default: 20)
 args.lr = 1e-3 #learning rate (default: 1e-3)
 args.wd = 1e-3 #weight decay (default: 1e-4)
@@ -91,5 +94,19 @@ print("trainset size:",train_target.size())
 print("cvset size:",cv_target.size())
 print("testset size:",test_target.size())
 
+#####################
+### Evaluate KNet ###
+#####################
+KNet_model = KalmanNetNN()
+KNet_model.NNBuild(sys_model, args)
+# ## Train Neural Network
+KNet_Pipeline = Pipeline_EKF(strTime, "KNet", "KNet")
+KNet_Pipeline.setssModel(sys_model)
+KNet_Pipeline.setModel(KNet_model)
+print("Number of trainable parameters for KNet:",sum(p.numel() for p in KNet_model.parameters() if p.requires_grad))
+KNet_Pipeline.setTrainingParams(args) 
 
-#From now on in my opinion we should try to build the neural network with the libraries
+[MSE_cv_linear_epoch, MSE_cv_dB_epoch, MSE_train_linear_epoch, MSE_train_dB_epoch] = KNet_Pipeline.NNTrain(sys_model, cv_input, cv_target, train_input, train_target, path_results)
+## Test Neural Network
+[MSE_test_linear_arr, MSE_test_linear_avg, MSE_test_dB_avg,Knet_out,RunTime] = KNet_Pipeline.NNTest(sys_model, test_input, test_target, path_results)
+print("fine")
