@@ -171,7 +171,11 @@ class SystemModel:
             
             self.Init_batched_sequence(self.m1x_0_rand, self.m2x_0)### for sequence generation
         else: # fixed init
+            #print("entrato")
             initConditions = self.m1x_0.view(1,self.m,1).expand(size,-1,-1)
+            #print(initConditions.shape)
+            #print(initConditions)
+            #input("premi tasto per continuare")
             self.Init_batched_sequence(initConditions, self.m2x_0)### for sequence generation
     
         if(args.randomLength):
@@ -215,12 +219,15 @@ class SystemModel:
                     xt = torch.add(xt,eq)
                 else:            
                     xt = self.f(self.x_prev)
+                    #print(xt)
+                    #print(xt.shape)
                     mean = torch.zeros([size, self.m])              
                     distrib = MultivariateNormal(loc=mean, covariance_matrix=self.Q)
                     eq = distrib.rsample().view(size,self.m,1)
                     # Additive Process Noise
                     xt = torch.add(xt,eq)
-
+               
+                #input()
                 ################
                 ### Emission ###
                 ################
@@ -239,6 +246,8 @@ class SystemModel:
                     er = distrib.rsample().view(size,self.n,1)          
                     # Additive Observation Noise
                     yt = torch.add(yt,er)
+                #print(yt)
+                #print(yt.shape)
 
                 ########################
                 ### Squeeze to Array ###

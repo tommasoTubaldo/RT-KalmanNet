@@ -62,7 +62,6 @@ DatafolderName = 'Simulations/Lorenz_Atractor/data' + '/'
 #flag that will be used later on in the code
 switch = 'partial' # 'full' or 'partial' or 'estH'v 
 
-input() #to be deleted added only to block the code
 # noise q and r
 r2 = torch.tensor([0.1]) # [100, 10, 1, 0.1, 0.01]
 vdB = -20 # ratio v=q2/r2
@@ -74,7 +73,6 @@ R = r2[0] * R_structure #defining the output matrix noise
 
 print("1/r2 [dB]: ", 10 * torch.log10(1/r2[0]))
 print("1/q2 [dB]: ", 10 * torch.log10(1/q2[0]))
-input();
 
 traj_resultName = ['traj_lorDT_rq1030_T100.pt']
 dataFileName = ['data_lor_v20_rq1030_T100.pt'] #used to load data below
@@ -89,6 +87,7 @@ sys_model.InitSequence(m1x_0, m2x_0)# x0 and P0
 print("Start Data Gen")
 DataGen(args, sys_model, DatafolderName + dataFileName[0])
 print("Data Load")
+input()
 print(dataFileName[0])
 [train_input_long,train_target_long, cv_input, cv_target, test_input, test_target,_,_,_] =  torch.load(DatafolderName + dataFileName[0], map_location=device)  
 if chop: 
