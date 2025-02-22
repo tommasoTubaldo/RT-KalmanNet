@@ -4,6 +4,7 @@ Created on Wed Feb 19 13:11:27 2025
 
 @author: ricca
 """
+#%%
 import torch
 import Simulations.config as config
 
@@ -15,6 +16,7 @@ from Simulations.utils import DataGen
 from KNet.KalmanNet_nn import KalmanNetNN
 from Pipelines.Pipeline_EKF import Pipeline_EKF
 from Filters.EKF_test import EKFTest
+from RobustKalmanPY.robust_kalman import RobustKalman
 
 print("Pipeline Start")
 ################
@@ -32,6 +34,7 @@ print("Current Time =", strTime)
 ###################
 args = config.general_settings()
 ### dataset parameters
+# N is the number of sequences to be generated!
 args.N_E = 1000 #length of training dataset (I kept this length there is no specificagtion in the paper)
 args.N_CV = 100 #length of validation dataset (I kept this length there is no specificagtion in the paper)
 args.N_T = 200 #length of test dataset (I kept this length there is no specificagtion in the paper)
@@ -39,7 +42,7 @@ args.T = 100 #input sequence length (see paper pag.10 section c)
 args.T_test = 100 #input test sequence length (I kept this length there is no specificagtion in the paper)
 
 ### training parameters (I kept all these parameters I found them in the Lorenz attractor main file)
-args.use_cuda = True # use GPU or not (True = use GPU)
+args.use_cuda = False # use GPU or not (True = use GPU)
 args.n_steps =  200 #number of training steps (default: 1000)
 args.n_batch = 30 #input batch size for training (default: 20)
 args.lr = 1e-3 #learning rate (default: 1e-3)
@@ -87,13 +90,12 @@ sys_model.InitSequence(m1x_0, m2x_0)# x0 and P0
 print("Start Data Gen")
 DataGen(args, sys_model, DatafolderName + dataFileName[0])
 print("Data Load")
-input()
 print(dataFileName[0])
 [train_input,train_target, cv_input, cv_target, test_input, test_target,_,_,_] =  torch.load(DatafolderName + dataFileName[0], map_location=device)
 print("trainset size:",train_target.size())
 print("cvset size:",cv_target.size())
 print("testset size:",test_target.size())
-
+#%%
 #####################
 ### Evaluate KNet ###
 #####################
@@ -110,3 +112,10 @@ KNet_Pipeline.setTrainingParams(args)
 ## Test Neural Network
 [MSE_test_linear_arr, MSE_test_linear_avg, MSE_test_dB_avg,Knet_out,RunTime] = KNet_Pipeline.NNTest(sys_model, test_input, test_target, path_results)
 print("fine")
+
+# %% test of REKF on a test sample
+
+# The test shows something is broken .. must research tomorrow
+REKF = RobustKalman(sys_model, torch.squeeze(test_input[3,:,:]))
+
+[nekaj, senekaj] = REKF.fnREKF()
