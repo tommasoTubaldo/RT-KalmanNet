@@ -21,19 +21,14 @@ R=D*D';
 %% SAVE
 n=size(Q,1);
 p=size(R,1);
-
 Xrekf=zeros(n,T+1);
 Xrekf(:,1)=x0;
-
 Xn=zeros(n,T);
-
 V=zeros(n,n,T+1);
 V(:,:,1)=V0;
-
 A=zeros(n,n,T);
 C=zeros(p,n,T);
 G=zeros(n,p,T);
-z
 th=zeros(1,T);
 
 
@@ -41,32 +36,23 @@ th=zeros(1,T);
 for i=1:T
     %C_t
     C(:,:,i)=func_hl(Xrekf(:,i));
-
     %L_t
     L=V(:,:,i)*C(:,:,i)'*inv(C(:,:,i)*V(:,:,i)*C(:,:,i)'+R); 
-
     %h(\hat x_t)
     hn= func_h(Xrekf(:,i));
-
     %\hat x_t|t
     Xn(:,i)=Xrekf(:,i)+L*(y(:,i)-hn);
-
     %A_t
     A(:,:,i)=func_fl(Xn(:,i));
-
     %G_t
     G(:,:,i)=A(:,:,i)*L;
-
     %\hat x_t+1
-    Xrekf(:,i+1)=func_f(Xn(:,i)); 
-
+    Xrekf(:,i+1)=func_f(Xn(:,i));    
     %P_t+1
     P=A(:,:,i)*V(:,:,i)*A(:,:,i)'-A(:,:,i)*V(:,:,i)*C(:,:,i)'*inv(C(:,:,i)*V(:,:,i)*C(:,:,i)'+R)*C(:,:,i)*V(:,:,i)*A(:,:,i)'+Q;
-
     %th_t
     th(i) = theta(P,c,n);
-    
     %V_t+1
-    V(:,:,i+1)=inv(inv(P)-t h(i)*eye(n));
+    V(:,:,i+1)=inv(inv(P)-th(i)*eye(n));
 end
 

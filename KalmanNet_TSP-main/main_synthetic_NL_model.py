@@ -112,10 +112,3 @@ KNet_Pipeline.setTrainingParams(args)
 ## Test Neural Network
 [MSE_test_linear_arr, MSE_test_linear_avg, MSE_test_dB_avg,Knet_out,RunTime] = KNet_Pipeline.NNTest(sys_model, test_input, test_target, path_results)
 print("fine")
-
-# %% test of REKF on a test sample
-
-# The test shows something is broken .. must research tomorrow
-REKF = RobustKalman(sys_model, torch.squeeze(test_input[3,:,:]))
-
-[nekaj, senekaj] = REKF.fnREKF()

@@ -1,0 +1,106 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+#%%
+import torch
+import Simulations.config as config
+import matplotlib.pyplot as plt
+
+
+from datetime import datetime
+from Simulations.REKF_model.parameters import n, m, Q, R, f, h, m1x_0, m2x_0
+from Simulations.Extended_sysmdl import SystemModel
+from Simulations.utils import DataGen
+from RobustKalmanPY.robust_kalman import RobustKalman
+
+print("Pipeline Start")
+################
+### Get Time ###
+################
+today = datetime.today()
+now = datetime.now()
+strToday = today.strftime("%m.%d.%y")
+strNow = now.strftime("%H:%M:%S")
+strTime = strToday + "_" + strNow
+print("Current Time =", strTime)
+
+###################
+###  Settings   ###
+###################
+args = config.general_settings()
+### dataset parameters
+# N is the number of sequences to be generated!
+args.N_E = 1 #length of training dataset (I kept this length there is no specificagtion in the paper)
+args.N_CV = 1 #length of validation dataset (I kept this length there is no specificagtion in the paper)
+args.N_T = 1 #length of test dataset (I kept this length there is no specificagtion in the paper)
+args.T = 100 #input sequence length (see paper pag.10 section c)
+args.T_test = 100 #input test sequence length (I kept this length there is no specificagtion in the paper)
+
+### training parameters (I kept all these parameters I found them in the Lorenz attractor main file)
+args.use_cuda = False # use GPU or not (True = use GPU)
+args.n_steps =  200 #number of training steps (default: 1000)
+args.n_batch = 30 #input batch size for training (default: 20)
+args.lr = 1e-3 #learning rate (default: 1e-3)
+args.wd = 1e-3 #weight decay (default: 1e-4)
+
+#offset = 0 # offset for the data
+#chop = False # whether to chop data sequences into shorter sequences
+path_results = 'KNet/'
+DatafolderName = 'Simulations/REKF_model/data' + '/'
+#flag that will be used later on in the code
+#switch = 'partial' # 'full' or 'partial' or 'estH'v 
+
+traj_resultName = ['traj_REKF_T100.pt']
+dataFileName = ['data_REKF_T100.pt'] #used to load data below
+    
+device = torch.device('cpu')
+
+#########################################
+###  Generate and load data DT case   ###
+#########################################
+
+sys_model = SystemModel(f, Q, h, R, args.T, args.T_test, m, n)# parameters for GT
+sys_model.InitSequence(m1x_0, m2x_0)# x0 and P0
+
+print("Start Data Gen")
+DataGen(args, sys_model, DatafolderName + dataFileName[0])
+print("Data Load")
+print(dataFileName[0])
+[train_input,train_target, _, _, _, _,_,_,_] =  torch.load(DatafolderName + dataFileName[0], map_location=device)
+print("trainset size:",train_target.size())
+train_input = torch.squeeze(train_input,1)
+train_target = torch.squeeze(train_target)
+
+#%% Test plot of data
+
+plt.figure()
+
+plt.subplot(211)
+plt.plot(torch.transpose(train_target,0, 1))
+plt.title("X_n")
+
+plt.subplot(212)
+plt.plot(torch.transpose(train_input,0, 1))
+plt.title("Y_n")
+
+# %% test of REKF on a test sample
+sys_model.m1x_0 = torch.zeros(m,1)
+# The test shows something is broken .. must resech tomorrow
+REKF = RobustKalman(sys_model, train_input, 1e-3, True)
+
+[Xrekf, _] = REKF.fnREKF()
+
+
+#%% Test plot of data
+
+plt.figure()
+
+plt.subplot(211)
+plt.plot(torch.transpose(train_target,0, 1))
+plt.plot(torch.transpose(Xrekf, 0, 1))
+plt.title("X_n")
+
+plt.subplot(212)
+plt.plot(torch.transpose(train_input,0, 1))
+plt.title("Y_n")
+

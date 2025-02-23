@@ -1,23 +1,28 @@
 #%% Basic libraries for matrix manipulation and math functions
+
+
 import math
 import numpy as np
 import torch
-#from torch.autograd.functional.jacobian
 
 #%%
+
+
 # NOTE! There is a combination of numpy and torch thus if changing something use Tensors!
 # torch.autograd.functional.jacobian jacobian from a function and tensor
 class RobustKalman():
-    def __init__(self, SysModel, test_data, c : float = 1e-3):
+    def __init__(self, SysModel, test_data, c : float = 1e-3, hard_coded: bool = False):
         self.model = SysModel # Store the system model for f and h
         self.x0 = torch.transpose(SysModel.m1x_0, 0, 1) # x0
         #self.V0 = SysModel.m2x_0 # P0
-        self.V0 = 1e-3*torch.eye(2, 2)
+        #self.V0 = 1e-3*torch.eye(2, 2)
         self.Q = SysModel.Q
         self.R = SysModel.R
         self.T = SysModel.T_test # The number of samples in the test data
         self.y = test_data
-        self.c = c
+        self.c = torch.tensor(c)
+        print(self.c)
+        self.hard_coded = hard_coded
         
         # Preallocation of memory
         self.n = torch.Tensor.numpy(self.Q).shape[0]
@@ -38,11 +43,19 @@ class RobustKalman():
         
     # Numerical Jacobian Computation (This is important for us since we are using the non-linear model)
     def fnComputeJacobianF(self, x_n_temp):
-        f_jac = torch.autograd.functional.jacobian(self.model.f, x_n_temp)
+        # Hard coded version for translation debugging
+        if self.hard_coded:
+            f_jac = torch.tensor([[1/10, 1-(torch.sin(x_n_temp[1]/10)/10)],[0, 49/50]])
+        else:
+            f_jac = torch.autograd.functional.jacobian(self.model.f, x_n_temp)
         return f_jac
     
     def fnComputeJacobianH(self, x_rekf_temp):
-        h_jac = torch.autograd.functional.jacobian(self.model.f,x_rekf_temp)
+        # Hard coded version for translation debugging
+        if self.hard_coded:
+            h_jac = torch.tensor([[1-2*x_rekf_temp[0], 2*x_rekf_temp[1]-1]])
+        else:
+            h_jac = torch.autograd.functional.jacobian(self.model.f,x_rekf_temp)
         return h_jac
     
     def fnComputeTheta(self, P_pred):
@@ -57,7 +70,6 @@ class RobustKalman():
         while torch.abs(value) >= 1e-7:
             theta = 0.5*(t1+t2)
             value = torch.trace(torch.Tensor.inverse(torch.eye(self.n) - theta * P_pred)-torch.eye(self.n)) + torch.log(torch.det(torch.eye(self.n) - theta * P_pred)) - self.c
-            print(value)
             if value > 0:
                 t2 = theta
             else:
@@ -67,7 +79,6 @@ class RobustKalman():
     
     # Computation of the REKF
     def fnREKF(self):
-        
         for i in range(0, self.T):
             # C_t
             self.C[:, :, i] = self.fnComputeJacobianH(self.Xrekf[:,i])
@@ -79,7 +90,7 @@ class RobustKalman():
             hn = self.model.h(self.Xrekf[:,i])
             
             # \hat x_t|t
-            self.Xn[:, i] = self.Xrekf[:, i] + L @ (self.y[:,i] - hn)
+            self.Xn[:, i] = self.Xrekf[:, i] + torch.squeeze(L * (self.y[:,i] - hn))
             
             # A_t
             self.A[:, :, i] = self.fnComputeJacobianF(self.Xn[:,i])
@@ -88,7 +99,7 @@ class RobustKalman():
             self.G[:, :, i] = self.A[:, :, i] @ L
             
             # \hat x_t+1
-            self.Xrekf[:, i+1] = self.model.f(self.Xn[:, i])
+            self.Xrekf[:, i+1] = torch.squeeze(self.model.f(self.Xn[:, i]))
             
             # P_t+1 - The massive fucking riccatti equation
             P = self.A[:, :, i] @ self.V[:, :, i] @ torch.transpose(self.A[:, :, i], 0, 1) - self.A[:, :, i] @ self.V[:, :, i] @ torch.transpose(self.C[:, :, i], 0, 1) @ torch.Tensor.inverse(self.C[:, :, i] @ self.V[:, :, i] @ torch.transpose(self.C[:, :, i], 0, 1)) @ self.C[:, :, i] @ self.V[:, :, i] @ torch.transpose(self.A[:, :, i], 0, 1) + self.Q
@@ -101,13 +112,6 @@ class RobustKalman():
             
         return [self.Xrekf, self.V]
     
-    
-    
-
-    
-
-    
-
 
 
 

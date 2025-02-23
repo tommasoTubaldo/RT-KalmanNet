@@ -32,7 +32,7 @@ end
 
 %% filter
 % tolearace
-c=10^-3; % Needs to be determined using the NN!
+c=10^-3;
 Rx=REKF(hatxn0,yn,V0,B,D,c,N);
 
 %% picture
