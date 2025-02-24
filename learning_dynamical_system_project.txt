@@ -19,7 +19,7 @@ Question to be answered:
 5) check line 114 file main_lor_DT.py what the variable sys_model_pass2 does?
 6) Which are the features relevant for the training of the DNN module? (starting from the 4 adopted in KNet, see pag.5 sec. B)
    Since in practice the state of the system is not always available, can we avoid using it as feature as suggested by Zorzi?
-7) What structure do we adopt for the DNN? Do we need a recursive fromulation?
+7) Which structure do we adopt for the DNN? Do we need a recursive formulation?
    Possible architectures: -the first architecture of KNet, i.e. an RNN with one or multiple GRU stages (see Fig.3 of the paper). In such
                              a way we exploit the recursive formulation of the Kalman Gain.
                            -a Feedforward NN from scratch
