@@ -23,3 +23,4 @@ Question to be answered:
    Possible architectures: -the first architecture of KNet, i.e. an RNN with one or multiple GRU stages (see Fig.3 of the paper). In such
                              a way we exploit the recursive formulation of the Kalman Gain.
                            -a Feedforward NN from scratch
+8) How do we choose c_t for REKF? Since in the paper it was defined as a decreasing exponential, i.e. c_t = c_0*exp(-0.0001t).
