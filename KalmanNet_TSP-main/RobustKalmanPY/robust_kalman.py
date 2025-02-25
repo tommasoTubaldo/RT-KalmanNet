@@ -13,33 +13,33 @@ import torch
 class RobustKalman():
     def __init__(self, SysModel, test_data, c : float = 1e-3, hard_coded: bool = False):
         self.model = SysModel # Store the system model for f and h
-        self.x0 = torch.transpose(SysModel.m1x_0, 0, 1) # x0
+        self.x0 = torch.transpose(SysModel.m1x_0, 0, 1) # x0 row vector (1,2)
         #self.V0 = SysModel.m2x_0 # P0
         #self.V0 = 1e-3*torch.eye(2, 2)
         self.Q = SysModel.Q
         self.R = SysModel.R
-        self.T = SysModel.T_test # The number of samples in the test data
+        self.T = SysModel.T # The number of samples in the test data
         self.y = test_data
         self.c = torch.tensor(c)
         print(self.c)
         self.hard_coded = hard_coded
         
         # Preallocation of memory
-        self.n = torch.Tensor.numpy(self.Q).shape[0]
-        self.p = torch.Tensor.numpy(self.R).shape[0]
+        self.n = torch.Tensor.numpy(self.Q).shape[0] #state dimension
+        self.p = torch.Tensor.numpy(self.R).shape[0] #output dimension
         
-        self.Xrekf = torch.zeros(self.n, self.T+1)
+        self.Xrekf = torch.zeros(self.n, self.T+1) #allocation of memory to save \hat x_t
         self.Xrekf[:, 0] = self.x0
         
-        self.Xn = torch.zeros(self.n, self.T)
+        self.Xn = torch.zeros(self.n, self.T) #allocation of memory to save \hat x_t|t
         
-        self.V = torch.zeros(self.n, self.n, self.T+1)
+        self.V = torch.zeros(self.n, self.n, self.T+1) #allocation of memory to save V_t
         self.V[:,:,0] = 1e-3*torch.eye(2, 2)
         
-        self.A = torch.zeros(self.n, self.n, self.T)
-        self.C = torch.zeros(self.p, self.n, self.T)
+        self.A = torch.zeros(self.n, self.n, self.T) #allocation of memory to save the linearizatio of state equation
+        self.C = torch.zeros(self.p, self.n, self.T) #allocation of memory to save the linearizatio of output equation
         self.G = torch.zeros(self.n, self.p, self.T)
-        self.th = torch.zeros(self.T)
+        self.th = torch.zeros(self.T) #allocation of memory to save the values of theta
         
     # Numerical Jacobian Computation (This is important for us since we are using the non-linear model)
     def fnComputeJacobianF(self, x_n_temp):
@@ -55,7 +55,7 @@ class RobustKalman():
         if self.hard_coded:
             h_jac = torch.tensor([[1-2*x_rekf_temp[0], 2*x_rekf_temp[1]-1]])
         else:
-            h_jac = torch.autograd.functional.jacobian(self.model.f,x_rekf_temp)
+            h_jac = torch.autograd.functional.jacobian(self.model.h,x_rekf_temp)
         return h_jac
     
     def fnComputeTheta(self, P_pred):
@@ -102,7 +102,7 @@ class RobustKalman():
             self.Xrekf[:, i+1] = torch.squeeze(self.model.f(self.Xn[:, i]))
             
             # P_t+1 - The massive fucking riccatti equation
-            P = self.A[:, :, i] @ self.V[:, :, i] @ torch.transpose(self.A[:, :, i], 0, 1) - self.A[:, :, i] @ self.V[:, :, i] @ torch.transpose(self.C[:, :, i], 0, 1) @ torch.Tensor.inverse(self.C[:, :, i] @ self.V[:, :, i] @ torch.transpose(self.C[:, :, i], 0, 1)) @ self.C[:, :, i] @ self.V[:, :, i] @ torch.transpose(self.A[:, :, i], 0, 1) + self.Q
+            P = self.A[:, :, i] @ self.V[:, :, i] @ torch.transpose(self.A[:, :, i], 0, 1) - self.A[:, :, i] @ self.V[:, :, i] @ torch.transpose(self.C[:, :, i], 0, 1) @ torch.Tensor.inverse(self.C[:, :, i] @ self.V[:, :, i] @ torch.transpose(self.C[:, :, i], 0, 1) + self.R) @ self.C[:, :, i] @ self.V[:, :, i] @ torch.transpose(self.A[:, :, i], 0, 1) + self.Q
 
             # th_t
             self.th[i] = self.fnComputeTheta(P)

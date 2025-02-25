@@ -67,16 +67,23 @@ DataGen(args, sys_model, DatafolderName + dataFileName[0])
 print("Data Load")
 print(dataFileName[0])
 [train_input,train_target, _, _, _, _,_,_,_] =  torch.load(DatafolderName + dataFileName[0], map_location=device)
-print("trainset size:",train_target.size())
+print("trainset input size:",train_input.size())
+print("trainset target size:",train_target.size())
+
 train_input = torch.squeeze(train_input,1)
 train_target = torch.squeeze(train_target)
+print("trainset input size:",train_input.size())
+print("trainset target size:",train_target.size())
+
+#print(train_input)
+#print(train_target)
 
 #%% Test plot of data
 
 plt.figure()
 
 plt.subplot(211)
-plt.plot(torch.transpose(train_target,0, 1))
+plt.plot(torch.transpose(train_target,0, 1))#exchange 0 and 1 dimension
 plt.title("X_n")
 
 plt.subplot(212)
