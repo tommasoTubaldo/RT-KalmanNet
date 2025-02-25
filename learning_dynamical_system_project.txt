@@ -28,16 +28,3 @@ Question to be answered:
 	algorithm one I'm not able to fully recognize the scheme, is someone able to highlight it?
 
 
-Possible Errors on Sasa'code:
-1) In file Robust Kalman.py -> line 21 it is written self.T = SysModel.T_test # The number of samples in the test data
-	but according to the meaning of the variables args.T,args.T_test (in file main.ERKF.py -> line 36-37) I think
-	that the correct line of code should be self.T = SysModel.T (I corrected it check it)
-2) In file Robust Kalman.py -> line 58 there was written "h_jac = torch.autograd.functional.jacobian(self.model.f,x_rekf_temp)"
-	I corrected it with "h_jac = torch.autograd.functional.jacobian(self.model.h,x_rekf_temp)" because that is the function
-	to linearize h() (check it)
-
-3)  In file Robust Kalman.py -> line 105 there was written P = self.A[:, :, i] @ self.V[:, :, i] @ torch.transpose(self.A[:, :, i], 0, 1) - self.A[:, :, i] @ self.V[:, :, i] @ torch.transpose(self.C[:, :, i], 0, 1) @ torch.Tensor.inverse(self.C[:, :, i] @ self.V[:, :, i] @ torch.transpose(self.C[:, :, i], 0, 1)) @ self.C[:, :, i] @ self.V[:, :, i] @ torch.transpose(self.A[:, :, i], 0, 1) + self.Q
-	 I corrected it with P = self.A[:, :, i] @ self.V[:, :, i] @ torch.transpose(self.A[:, :, i], 0, 1) - self.A[:, :, i] @ self.V[:, :, i] @ torch.transpose(self.C[:, :, i], 0, 1) @ torch.Tensor.inverse(self.C[:, :, i] @ self.V[:, :, i] @ torch.transpose(self.C[:, :, i], 0, 1) + self.R) @ self.C[:, :, i] @ self.V[:, :, i] @ torch.transpose(self.A[:, :, i], 0, 1) + self.Q
-	(the correction is self.R inside the inverse which is the term D*transpose(D) in line 7 of algorithm 1 in Zorzi's article)
-4) In file Robust Kalman.py -> line 99 what is G_t in the paper?
-
