@@ -96,7 +96,7 @@ plt.title("Y_n")
 # %% test of REKF on a test sample
 sys_model.m1x_0 = torch.zeros(m,1)
 # The test shows something is broken .. must resech tomorrow
-REKF = RobustKalman(sys_model, train_input, 1e-3, True)
+REKF = RobustKalman(sys_model, train_input, 1e-3, True, False)
 
 [Xrekf, _] = REKF.fnREKF()
 #print(Xrekf.shape)
@@ -117,6 +117,29 @@ plt.plot(torch.transpose(train_input,0, 1))
 plt.title("Y_n")
 
 #%% ##################### FROM HERE WE TEST THE IMPLEMENTATION OF RT-KalmanNet #########################
+sys_model.m1x_0 = torch.zeros(m,1)
+RT_KalmanNet = RobustKalman(sys_model, train_input,1e-3,True,True)
 
+import torch.optim as optim
+import torch.nn as nn
+
+
+lr = 0.01 #learning rate
+epochs = 20 #defining the number of epochs
+
+optimizer = optim.Adam(RT_KalmanNet.nn.parameters(), lr=lr)
+criterion = nn.MSELoss()  # Minimizza l'errore della stima dello stato
+
+for epoch in range(epochs):
+    
+    DataGen(args, sys_model, DatafolderName + dataFileName[0])
+    [train_input,train_target, _, _, _, _,_,_,_] =  torch.load(DatafolderName + dataFileName[0], map_location=device)
+    input("data generated")
+    train_input = torch.squeeze(train_input,1) #(for original model)
+    train_target = torch.squeeze(train_target)
+    input("data squeeze")
+    [Xrekf, _] = RT_KalmanNet.fnREKF()
+    input("passing through kalamn")
+    print(Xrekf.requires_grad)
 
 

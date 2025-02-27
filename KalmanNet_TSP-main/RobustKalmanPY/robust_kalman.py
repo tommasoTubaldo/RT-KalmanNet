@@ -4,6 +4,7 @@
 import math
 import numpy as np
 import torch
+from KNet.RT_KalmanNet_nn import RT_KalmanNet_nn
 
 #%%
 
@@ -11,7 +12,10 @@ import torch
 # NOTE! There is a combination of numpy and torch thus if changing something use Tensors!
 # torch.autograd.functional.jacobian jacobian from a function and tensor
 class RobustKalman():
-    def __init__(self, SysModel, test_data, c : float = 1e-3, hard_coded: bool = False):
+    def __init__(self, SysModel, test_data, c : float = 1e-3, hard_coded: bool = False,use_nn: bool = False):
+        
+        self.use_nn = use_nn
+        
         self.model = SysModel # Store the system model for f and h
         self.x0 = torch.transpose(SysModel.m1x_0, 0, 1) # x0 row vector (1,2)
         #self.V0 = SysModel.m2x_0 # P0
@@ -57,6 +61,10 @@ class RobustKalman():
         self.G = torch.zeros(self.n, self.p, self.T)
         self.th = torch.zeros(self.T) #allocation of memory to save the values of theta
         
+        if self.use_nn:
+            print("Using Neural Network")
+            self.nn = RT_KalmanNet_nn(self.p,10,[10],1) 
+        
     # Numerical Jacobian Computation (This is important for us since we are using the non-linear model)
     def fnComputeJacobianF(self, x_n_temp):
         # Hard coded version for translation debugging
@@ -84,7 +92,7 @@ class RobustKalman():
         r = torch.max(torch.abs(e))
         t2 = (1-1e-5)*(torch.pow(r,-1))
         
-        while torch.abs(value) >= 1e-7:
+        while torch.abs(value) >= 1e-5:
             theta = 0.5*(t1+t2)
             value = torch.trace(torch.linalg.solve(torch.eye(self.n) - theta * P_pred,torch.eye(self.n))-torch.eye(self.n)) + torch.log(torch.det(torch.eye(self.n) - theta * P_pred)) - self.c
             if value > 0:
@@ -160,7 +168,11 @@ class RobustKalman():
             
             # P_t+1 - The massive fucking riccatti equation
             P = self.A[:, :, i] @ self.V_prev @ torch.transpose(self.A[:, :, i], 0, 1) - self.A[:, :, i] @ self.V_prev @ torch.transpose(self.C[:, :, i], 0, 1) @ torch.linalg.solve(self.C[:, :, i] @ self.V_prev @ torch.transpose(self.C[:, :, i], 0, 1) + self.R,torch.eye(self.p)) @ self.C[:, :, i] @ self.V_prev @ torch.transpose(self.A[:, :, i], 0, 1) + self.Q
-
+            
+            if self.use_nn:
+                #input("forward")
+                self.c = self.nn(self.y[:,i] - hn)
+            #input("computing theta")
             # th_t
             self.th[i] = self.fnComputeTheta(P)
             

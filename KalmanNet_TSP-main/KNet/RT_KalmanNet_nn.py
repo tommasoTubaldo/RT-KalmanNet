@@ -10,6 +10,7 @@ It is composed by
 import torch
 import torch.nn as nn
 
+
 class RT_KalmanNet_nn(nn.Module):
     def __init__(self, input_size_fcl,output_size_fcl, hidden_sizes, output_size_DNN):
         """
@@ -50,20 +51,20 @@ class RT_KalmanNet_nn(nn.Module):
 
         #print("X_shape",x.shape)
         #print("pre_out_shape",self.previous_output.shape)
-        #input()
+        #input("out fully")
         # Combining the previous output and the output of the fully connected layer
         x_combined = torch.cat((x, self.previous_output), dim=1)
         #print("x_combined_shape",x_combined.shape)
-        #input()
+        #input("entering dnn")
         dnn_output = torch.relu(self.dnn_input_layer(x_combined))
 
         # Passing through the hidden layers
         for layer in self.dnn_hidden_layers:
             dnn_output = torch.relu(layer(dnn_output))
-
+        #input("entering output layer dnn")
         # output layer
         final_output = torch.sigmoid(self.output_layer(dnn_output)) #I apply exp to guarantee that the value c will be positive
-
+        #input("exiting output layer dnn")
         # Update the previous output
         self.previous_output = final_output.detach() # disable backpropagation for this variable
 
