@@ -1,13 +1,11 @@
 #%% Basic libraries for matrix manipulation and math functions
 
-
 import math
 import numpy as np
 import torch
 from KNet.RT_KalmanNet_nn import RT_KalmanNet_nn
 
 #%%
-
 
 # NOTE! There is a combination of numpy and torch thus if changing something use Tensors!
 # torch.autograd.functional.jacobian jacobian from a function and tensor
@@ -32,7 +30,7 @@ class RobustKalman():
         self.n = torch.Tensor.numpy(self.Q).shape[0] #state dimension
         self.p = torch.Tensor.numpy(self.R).shape[0] #output dimension
         
-        self.Xrekf = torch.zeros(self.n, self.T+1) #allocation of memory to save \hat x_t
+        self.Xrekf = torch.zeros(self.n, self.T+1, requires_grad=True) #allocation of memory to save \hat x_t
         #self.Xrekf[:, 0] = self.x0
         self.Xrekf_prev = self.x0.squeeze(0)
         #print(self.x0.shape)
@@ -163,10 +161,11 @@ class RobustKalman():
             self.G[:, :, i] = self.A[:, :, i] @ L
             
             # \hat x_t+1
-            self.Xrekf[:, i+1] = torch.squeeze(self.model.f(self.Xn[:, i]))
+            self.Xrekf = self.Xrekf.clone()
+            self.Xrekf[:, i + 1] = torch.squeeze(self.model.f(self.Xn[:, i]))
             self.Xrekf_prev = self.Xrekf[:, i+1]
             
-            # P_t+1 - The massive fucking riccatti equation
+            # P_t+1 - The massive fucking Riccati equation
             P = self.A[:, :, i] @ self.V_prev @ torch.transpose(self.A[:, :, i], 0, 1) - self.A[:, :, i] @ self.V_prev @ torch.transpose(self.C[:, :, i], 0, 1) @ torch.linalg.solve(self.C[:, :, i] @ self.V_prev @ torch.transpose(self.C[:, :, i], 0, 1) + self.R,torch.eye(self.p)) @ self.C[:, :, i] @ self.V_prev @ torch.transpose(self.A[:, :, i], 0, 1) + self.Q
             
             if self.use_nn:
@@ -180,6 +179,4 @@ class RobustKalman():
             self.V[:, :, i+1] = torch.linalg.solve(torch.linalg.solve(P,torch.eye(self.n)) - self.th[i] * torch.eye(self.n),torch.eye(self.n))
             self.V_prev = self.V[:, :, i+1]
             
-        return [self.Xrekf, self.V]     
-
-
+        return [self.Xrekf, self.V]

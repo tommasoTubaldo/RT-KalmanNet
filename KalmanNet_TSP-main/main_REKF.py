@@ -104,7 +104,7 @@ REKF = RobustKalman(sys_model, train_input, 1e-3, True, False)
 
 
 #%% Test plot of data
-
+"""
 plt.figure()
 
 plt.subplot(211)
@@ -115,31 +115,61 @@ plt.title("X_n")
 plt.subplot(212)
 plt.plot(torch.transpose(train_input,0, 1))
 plt.title("Y_n")
+"""
 
 #%% ##################### FROM HERE WE TEST THE IMPLEMENTATION OF RT-KalmanNet #########################
-sys_model.m1x_0 = torch.zeros(m,1)
-RT_KalmanNet = RobustKalman(sys_model, train_input,1e-3,True,True)
-
 import torch.optim as optim
 import torch.nn as nn
 
+sys_model.m1x_0 = torch.zeros(m,1)
+RT_KalmanNet = RobustKalman(sys_model, train_input,1e-3,True,True)
+model = RT_KalmanNet
 
 lr = 0.01 #learning rate
-epochs = 20 #defining the number of epochs
+epochs = 1 #defining the number of epochs
 
 optimizer = optim.Adam(RT_KalmanNet.nn.parameters(), lr=lr)
 criterion = nn.MSELoss()  # Minimizza l'errore della stima dello stato
 
 for epoch in range(epochs):
-    
+    print(f"Epoch {epoch + 1}/{epochs}")
+
+    # Generate data
     DataGen(args, sys_model, DatafolderName + dataFileName[0])
-    [train_input,train_target, _, _, _, _,_,_,_] =  torch.load(DatafolderName + dataFileName[0], map_location=device)
-    input("data generated")
-    train_input = torch.squeeze(train_input,1) #(for original model)
+    [train_input, train_target, _, _, _, _, _, _, _] = torch.load(DatafolderName + dataFileName[0], map_location=device)
+    print("Data generated")
+
+    # Preprocess data
+    train_input = torch.squeeze(train_input, 1)  # Remove redundant dimensions
     train_target = torch.squeeze(train_target)
-    input("data squeeze")
+    print("Data squeezed")
+
+    # Zeroing gradients
+    optimizer.zero_grad()
+
+    # Forward pass
     [Xrekf, _] = RT_KalmanNet.fnREKF()
-    input("passing through kalamn")
-    print(Xrekf.requires_grad)
+    Xrekf = Xrekf[:, 1:]
+    print("Passing through Kalman Filter\n")
+
+    # Check gradient flow
+    print("requires_grad:", Xrekf.requires_grad)
+
+    # Compute loss
+    loss = criterion(Xrekf, train_target)
+    print(f"Loss: {loss.item()}")
+
+    # Backward pass
+    loss.backward()
+
+    # Optimization step
+    optimizer.step()
+    print("Optimizer step completed")
+
+    print("Epoch completed\n")
+
+print("Training finished")
+
+
 
 
