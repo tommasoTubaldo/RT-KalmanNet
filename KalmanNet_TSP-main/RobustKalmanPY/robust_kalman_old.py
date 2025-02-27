@@ -69,7 +69,7 @@ class RobustKalman():
         
         while torch.abs(value) >= 1e-7:
             theta = 0.5*(t1+t2)
-            value = torch.trace(torch.Tensor.inverse(torch.eye(self.n) - theta * P_pred)-torch.eye(self.n)) + torch.log(torch.det(torch.eye(self.n) - theta * P_pred)) - self.c
+            value = torch.trace(torch.linalg.solve(torch.eye(self.n) - theta * P_pred,torch.eye(self.n))-torch.eye(self.n)) + torch.log(torch.det(torch.eye(self.n) - theta * P_pred)) - self.c
             if value > 0:
                 t2 = theta
             else:
@@ -84,7 +84,7 @@ class RobustKalman():
             self.C[:, :, i] = self.fnComputeJacobianH(self.Xrekf[:,i])
             
             # L_t
-            L = self.V[:,:,i] @ torch.transpose(self.C[:,:,i], 0, 1) @ torch.Tensor.inverse(self.C[:,:,i] @ self.V[:, :, i] @ torch.transpose(self.C[:,:,i], 0, 1) + self.R)
+            L = self.V[:,:,i] @ torch.transpose(self.C[:,:,i], 0, 1) @ torch.linalg.solve(self.C[:,:,i] @ self.V[:, :, i] @ torch.transpose(self.C[:,:,i], 0, 1) + self.R,torch.eye(self.p))
             
             # h(\hat x_t)
             hn = self.model.h(self.Xrekf[:,i])
@@ -102,13 +102,13 @@ class RobustKalman():
             self.Xrekf[:, i+1] = torch.squeeze(self.model.f(self.Xn[:, i]))
             
             # P_t+1 - The massive fucking riccatti equation
-            P = self.A[:, :, i] @ self.V[:, :, i] @ torch.transpose(self.A[:, :, i], 0, 1) - self.A[:, :, i] @ self.V[:, :, i] @ torch.transpose(self.C[:, :, i], 0, 1) @ torch.Tensor.inverse(self.C[:, :, i] @ self.V[:, :, i] @ torch.transpose(self.C[:, :, i], 0, 1) + self.R) @ self.C[:, :, i] @ self.V[:, :, i] @ torch.transpose(self.A[:, :, i], 0, 1) + self.Q
+            P = self.A[:, :, i] @ self.V[:, :, i] @ torch.transpose(self.A[:, :, i], 0, 1) - self.A[:, :, i] @ self.V[:, :, i] @ torch.transpose(self.C[:, :, i], 0, 1) @ torch.linalg.solve(self.C[:, :, i] @ self.V[:, :, i] @ torch.transpose(self.C[:, :, i], 0, 1) + self.R,torch.eye(self.p)) @ self.C[:, :, i] @ self.V[:, :, i] @ torch.transpose(self.A[:, :, i], 0, 1) + self.Q
 
             # th_t
             self.th[i] = self.fnComputeTheta(P)
             
             # V_t+1
-            self.V[:, :, i+1] = torch.Tensor.inverse(torch.Tensor.inverse(P) - self.th[i] * torch.eye(self.n))
+            self.V[:, :, i+1] = torch.linalg.solve(torch.linalg.solve(P,torch.eye(self.n)) - self.th[i] * torch.eye(self.n),torch.eye(self.n))
             
         return [self.Xrekf, self.V]
     
