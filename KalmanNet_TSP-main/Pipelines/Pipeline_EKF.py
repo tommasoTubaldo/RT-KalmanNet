@@ -122,11 +122,9 @@ class Pipeline_EKF:
             else:
                 self.model.InitSequence(\
                 SysModel.m1x_0.reshape(1,SysModel.m,1).repeat(self.N_B,1,1), SysModel.T)
-            
             # Forward Computation
             for t in range(0, SysModel.T):
                 x_out_training_batch[:, :, t] = torch.squeeze(self.model(torch.unsqueeze(y_training_batch[:, :, t],2)))
-            
             # Compute Training Loss
             MSE_trainbatch_linear_LOSS = 0
             if (self.args.CompositionLoss):
@@ -170,7 +168,7 @@ class Pipeline_EKF:
                             MSE_train_linear_LOSS[jj] = self.loss_fn(x_out_training_batch[jj,:,train_lengthMask[index]], train_target_batch[jj,:,train_lengthMask[index]])
                             jj += 1
                         MSE_trainbatch_linear_LOSS = torch.mean(MSE_train_linear_LOSS)
-                    else: 
+                    else:
                         MSE_trainbatch_linear_LOSS = self.loss_fn(x_out_training_batch, train_target_batch)
 
             # dB Loss

@@ -144,22 +144,24 @@ class KalmanNetNN(torch.nn.Module):
     ######################
     def step_prior(self):
         # Predict the 1-st moment of x
-        self.m1x_prior = self.f(self.m1x_posterior)
+        self.m1x_prior = self.f(self.m1x_posterior) #x_hat_t|t-1
 
         # Predict the 1-st moment of y
-        self.m1y = self.h(self.m1x_prior)
+        self.m1y = self.h(self.m1x_prior)#y_hat_t|t-1
 
     ##############################
     ### Kalman Gain Estimation ###
     ##############################
     def step_KGain_est(self, y):
         # both in size [batch_size, n]
-        obs_diff = torch.squeeze(y,2) - torch.squeeze(self.y_previous,2) 
-        obs_innov_diff = torch.squeeze(y,2) - torch.squeeze(self.m1y,2)
+        obs_diff = torch.squeeze(y,2) - torch.squeeze(self.y_previous,2) #deltay_tilda
+        obs_innov_diff = torch.squeeze(y,2) - torch.squeeze(self.m1y,2) #deltay
         # both in size [batch_size, m]
-        fw_evol_diff = torch.squeeze(self.m1x_posterior,2) - torch.squeeze(self.m1x_posterior_previous,2)
-        fw_update_diff = torch.squeeze(self.m1x_posterior,2) - torch.squeeze(self.m1x_prior_previous,2)
-
+        fw_evol_diff = torch.squeeze(self.m1x_posterior,2) - torch.squeeze(self.m1x_posterior_previous,2) #deltax_tilda
+        fw_update_diff = torch.squeeze(self.m1x_posterior,2) - torch.squeeze(self.m1x_prior_previous,2) #deltax_hat
+        
+        #normalize with euclidean norm (p=2) along dimension one (dim=1) the tensor obs_diff adding a small value to normalization
+        #called (eps=1e-12) to avoid division by zero 
         obs_diff = func.normalize(obs_diff, p=2, dim=1, eps=1e-12, out=None)
         obs_innov_diff = func.normalize(obs_innov_diff, p=2, dim=1, eps=1e-12, out=None)
         fw_evol_diff = func.normalize(fw_evol_diff, p=2, dim=1, eps=1e-12, out=None)
@@ -183,7 +185,7 @@ class KalmanNetNN(torch.nn.Module):
         self.step_KGain_est(y)
 
         # Innovation
-        dy = y - self.m1y # [batch_size, n, 1]
+        dy = y - self.m1y # [batch_size, n, 1] \Deltay_t
 
         # Compute the 1-st posterior moment
         INOV = torch.bmm(self.KGain, dy)
