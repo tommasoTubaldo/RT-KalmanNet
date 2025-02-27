@@ -143,7 +143,7 @@ class RobustKalman():
     # Computation of the REKF
     def fnREKF(self):
         for i in range(0, self.T):
-            
+            print(i)
             # C_t
             self.C[:, :, i] = self.fnComputeJacobianH(self.Xrekf_prev)
             
@@ -155,7 +155,7 @@ class RobustKalman():
             
             # \hat x_t|t
             self.Xn[:, i] = self.Xrekf_prev + torch.squeeze(L * (self.y[:,i] - hn))
-            
+            print("Xn[:, i]",(self.Xn[:, i]).requires_grad)
             # A_t
             self.A[:, :, i] = self.fnComputeJacobianF(self.Xn[:,i])
             
@@ -164,6 +164,9 @@ class RobustKalman():
             
             # \hat x_t+1
             self.Xrekf[:, i+1] = torch.squeeze(self.model.f(self.Xn[:, i]))
+            print("self.model.f(self.Xn[:, i])=",self.model.f(self.Xn[:, i]).requires_grad)
+            
+            print("Xrekf[:, i+1]",(self.Xrekf[:, i+1]).requires_grad)
             self.Xrekf_prev = self.Xrekf[:, i+1]
             
             # P_t+1 - The massive fucking riccatti equation
@@ -172,6 +175,8 @@ class RobustKalman():
             if self.use_nn:
                 #input("forward")
                 self.c = self.nn(self.y[:,i] - hn)
+                print("self.c",(self.c).requires_grad)
+        
             #input("computing theta")
             # th_t
             self.th[i] = self.fnComputeTheta(P)

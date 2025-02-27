@@ -28,3 +28,8 @@ Question to be answered:
 	algorithm one I'm not able to fully recognize the scheme, is someone able to highlight it?
 
 
+Problems on Ricky's code:
+1) La funzione torch.squeeze() restituisce un tensore con requires_grad=False se la dimensione ridotta era di size 1. (Sasa we ha to try to implemente you function without
+	the use of squeeze and other functions that can cause require_grad = False) Can this be a possible idea?
+
+
