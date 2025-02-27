@@ -29,7 +29,7 @@ class RobustKalman():
         # Preallocation of memory
         self.n = torch.Tensor.numpy(self.Q).shape[0] #state dimension
         self.p = torch.Tensor.numpy(self.R).shape[0] #output dimension
-        
+        #when reordering code put an if statement here to declare with or without requires_grad=True
         self.Xrekf = torch.zeros(self.n, self.T+1, requires_grad=True) #allocation of memory to save \hat x_t
         #self.Xrekf[:, 0] = self.x0
         self.Xrekf_prev = self.x0.squeeze(0)

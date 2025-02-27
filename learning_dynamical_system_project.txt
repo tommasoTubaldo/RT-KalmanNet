@@ -13,32 +13,12 @@ Riccardo Zattra:
 -understand kalmannet code and see what can be reused for our purpose
 
 
+TODO:
+1) Mettere if statement per ogni variabile interessata in base al fatto che si usi la rete neurale o no (classe RobustKalman())
+2) Inserire modello sysnthetic NL model ( non cambiare nomi nel file parameters.py) + capire se il jacobiano numerico dà problemi (se si calcolarlo a mano)
+3) Trovare un allenamento della rete che va bene
+4) Fare plot vari e calcolare inference time
+5) Pulire codice da commenti che non fanno nulla 
+6) Fare una riunione con Zorzi
+
 Question to be answered:
-3) Relation between the C_t and K_t kalman gain (For me (ricky) I think that algorithm 1 at pag.3 of Zorzi's paper present the relation that we are looking for)
-4) line 54 file parameters.py of folder lorenz attractor what is " ### Auxiliar MultiDimensional Tensor B and C (they make A --> Differential equation matrix)"?
-5) check line 114 file main_lor_DT.py what the variable sys_model_pass2 does?
-6) Which are the features relevant for the training of the DNN module? (starting from the 4 adopted in KNet, see pag.5 sec. B)
-   Since in practice the state of the system is not always available, can we avoid using it as feature as suggested by Zorzi?
-7) Which structure do we adopt for the DNN? Do we need a recursive formulation?
-   Possible architectures: -the first architecture of KNet, i.e. an RNN with one or multiple GRU stages (see Fig.3 of the paper). In such
-                             a way we exploit the recursive formulation of the Kalman Gain.
-                           -a Feedforward NN from scratch
-8) How do we choose c_t for REKF? Since in the paper it was defined as a decreasing exponential, i.e. c_t = c_0*exp(-0.0001t).
-9) In the slide's of the presentation pag.3 there is the scheme of the robust EKF that is presented in Zorzi's article. Looking at
-	algorithm one I'm not able to fully recognize the scheme, is someone able to highlight it?
-
-
-Problems on Ricky's code:
-1) La funzione torch.squeeze() restituisce un tensore con requires_grad=False se la dimensione ridotta era di size 1. (Sasa we ha to try to implemente you function without
-	the use of squeeze and other functions that can cause require_grad = False) Can this be a possible idea?
-
-	funzioni da evitare per avere grafo interrotto:
-	Se vuoi mantenere requires_grad=True, evita:
-
-	.detach()
-	.numpy()
-	.item()
-	torch.no_grad()
-	torch.squeeze() (in alcuni casi)
-
-
