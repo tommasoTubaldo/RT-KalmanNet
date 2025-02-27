@@ -28,7 +28,7 @@ a1 = torch.tensor([0.1]);
 
 def f(x):
     # Assume tensor input
-    print("x=",x.requires_grad)
+    #print("x=",x.requires_grad)
     x = torch.squeeze(x) # in case we have a dimension too much
     x_out_1 = x[0]/10 + x[1] + torch.cos(x[1]/10) - 1
     x_out_2 = (49*x[1])/50

@@ -61,7 +61,7 @@ class RobustKalman():
         
         if self.use_nn:
             print("Using Neural Network")
-            self.nn = RT_KalmanNet_nn(self.p,10,[10],1) 
+            self.nn = RT_KalmanNet_nn(self.p,10,[50],1) 
         
     # Numerical Jacobian Computation (This is important for us since we are using the non-linear model)
     def fnComputeJacobianF(self, x_n_temp):
