@@ -32,4 +32,13 @@ Problems on Ricky's code:
 1) La funzione torch.squeeze() restituisce un tensore con requires_grad=False se la dimensione ridotta era di size 1. (Sasa we ha to try to implemente you function without
 	the use of squeeze and other functions that can cause require_grad = False) Can this be a possible idea?
 
+	funzioni da evitare per avere grafo interrotto:
+	Se vuoi mantenere requires_grad=True, evita:
+
+	.detach()
+	.numpy()
+	.item()
+	torch.no_grad()
+	torch.squeeze() (in alcuni casi)
+
 
