@@ -96,8 +96,7 @@ plt.title("Y_n")
 # %% test of REKF on a test sample
 sys_model.m1x_0 = torch.zeros(m,1)
 # The test shows something is broken .. must resech tomorrow
-REKF = RobustKalman(sys_model, train_input, 1e-3, True,False)
-print(REKF.use_nn)
+REKF = RobustKalman(sys_model, train_input, 1e-3, True)
 
 [Xrekf, _] = REKF.fnREKF()
 #print(Xrekf.shape)
@@ -118,57 +117,6 @@ plt.plot(torch.transpose(train_input,0, 1))
 plt.title("Y_n")
 
 #%% ##################### FROM HERE WE TEST THE IMPLEMENTATION OF RT-KalmanNet #########################
-RT_KalmanNet = RobustKalman(sys_model, train_input, 1e-3,True,True)
-#Note: as a first implementation I will make training and test here in the main file 
-############IMPORTING USEFUL LIBRARIES###############
-import torch.optim as optim
-import torch.nn as nn
 
-##############TRAINING#####################
-lr = 0.01;#defining the learning rate
-epochs = 20;
-input()
-optimizer = optim.Adam(RT_KalmanNet.nn.parameters(), lr=lr)
-criterion = nn.MSELoss()  #loss criterion, minimize the error on the state
-for epoch in range(epochs):
-    
-    #generate and load data
-    DataGen(args, sys_model, DatafolderName + dataFileName[0])
-    [train_input,train_target, _, _, _, _,_,_,_] =  torch.load(DatafolderName + dataFileName[0], map_location=device)
-    train_input = torch.squeeze(train_input,1) #reduce dimension
-    train_target = torch.squeeze(train_target)
-    
-    #reset the state
-    RT_KalmanNet.x0 = torch.zeros(m,1)
-    
-    #change the input of the object with the new generated data
-    RT_KalmanNet.y = train_input
-    
-    #Forward pass
-    [Xrekf, _] = RT_KalmanNet.fnREKF()
-    Xrekf.requires_grad = True
-    input("fine")
-   
-    # Compute loss
-    loss = criterion(Xrekf, train_target)
-    
-    print(Xrekf.requires_grad)  # Deve restituire True, altrimenti il backprop non funziona
-    
-    input()
-    
-    # Backpropagation
-    optimizer.zero_grad()  # Reset gradients
-    loss.backward()  # Compute gradients
-    optimizer.step()  # Update network weights
-    
-    #print(Xrekf.shape)
-    #print(train_target.shape)
-    #input()
-    print(f"Epoch {epoch}, Loss: {loss.item()}")
-    input()
-    
-    
-    
-print("done");
 
 
