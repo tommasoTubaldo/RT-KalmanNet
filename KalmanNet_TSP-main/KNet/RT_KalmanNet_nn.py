@@ -66,6 +66,6 @@ class RT_KalmanNet_nn(nn.Module):
         final_output = torch.sigmoid(self.output_layer(dnn_output)) #I apply exp to guarantee that the value c will be positive
         #input("exiting output layer dnn")
         # Update the previous output
-        self.previous_output = final_output.detach() # disable backpropagation for this variable
+        self.previous_output = final_output.clone().detach().requires_grad_(False)# disable backpropagation for this variable
 
         return final_output
