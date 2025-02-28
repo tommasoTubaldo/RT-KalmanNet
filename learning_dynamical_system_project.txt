@@ -19,6 +19,7 @@ TODO:
 3) Trovare un allenamento della rete che va bene
 4) Fare plot vari e calcolare inference time
 5) Pulire codice da commenti che non fanno nulla 
-6) Fare una riunione con Zorzi
+6) Riprovare codice KalmanNet con synthetic NL model e aggiungere un paio di grafici anche per quello
+7) Fare una riunione con Zorzi
 
 Question to be answered:
