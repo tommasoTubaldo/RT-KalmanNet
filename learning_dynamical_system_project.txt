@@ -17,7 +17,7 @@ TODO:
 1) Mettere if statement per ogni variabile interessata in base al fatto che si usi la rete neurale o no (classe RobustKalman())
 2) Inserire modello sysnthetic NL model ( non cambiare nomi nel file parameters.py) + capire se il jacobiano numerico dà problemi (se si calcolarlo a mano)
 3) Trovare un allenamento della rete che va bene
-4) Fare plot vari e calcolare inference time
+4) Fare plot vari e calcolare inference time (MSE, Inference Time, Loss, State Predictions vs State Ground Truth)
 5) Pulire codice da commenti che non fanno nulla 
 6) Riprovare codice KalmanNet con synthetic NL model e aggiungere un paio di grafici anche per quello
 7) Fare una riunione con Zorzi
