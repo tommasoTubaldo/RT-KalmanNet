@@ -48,23 +48,22 @@ class RT_KalmanNet_nn(nn.Module):
         """
         # Fully Connected Layer
         x = torch.relu(self.fcl(x))
-
-        #print("X_shape",x.shape)
-        #print("pre_out_shape",self.previous_output.shape)
-        #input("out fully")
+        
+        x = torch.reshape(x, (x.size()[0],1))
+        self.previous_output = torch.reshape(self.previous_output, (self.previous_output.size()[0],1))
         # Combining the previous output and the output of the fully connected layer
-        x_combined = torch.cat((x, self.previous_output), dim=1)
-        #print("x_combined_shape",x_combined.shape)
-        #input("entering dnn")
+
+        x_combined = torch.cat((x, self.previous_output), dim=0)
+        x_combined = torch.squeeze(x_combined)
         dnn_output = torch.relu(self.dnn_input_layer(x_combined))
 
         # Passing through the hidden layers
         for layer in self.dnn_hidden_layers:
             dnn_output = torch.relu(layer(dnn_output))
-        #input("entering output layer dnn")
+            
         # output layer
         final_output = torch.sigmoid(self.output_layer(dnn_output)) #I apply exp to guarantee that the value c will be positive
-        #input("exiting output layer dnn")
+        
         # Update the previous output
         self.previous_output = final_output.clone().detach().requires_grad_(False)# disable backpropagation for this variable
 
