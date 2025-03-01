@@ -19,7 +19,8 @@ TODO:
 3) Trovare un allenamento della rete che va bene (provare ReLU al posto di Sigmoid sull'ultimo layer) - Tommaso 
 4) Fare plot vari e calcolare inference time (MSE, Inference Time, Loss, State Pred vs State Ground Truth) - Tommaso
 5) Pulire codice da commenti che non fanno nulla - SASA
-6) Riprovare codice KalmanNet con synthetic NL model e aggiungere un paio di grafici anche per quello - Tommasso
-7) Fare una riunione con Zorzi - Tutti insieme
+6) Riprovare codice KalmanNet con synthetic NL model e aggiungere un paio di grafici anche per quello - Tommaso
+7) Cambiare parametri REKF
+8) Fare una riunione con Zorzi - Tutti insieme
 
 Question to be answered:
