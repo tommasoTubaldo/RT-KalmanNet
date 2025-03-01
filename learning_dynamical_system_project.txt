@@ -16,10 +16,11 @@ Riccardo Zattra:
 TODO:
 1) Mettere if statement per ogni variabile interessata in base al fatto che si usi la rete neurale o no (classe RobustKalman()) - SASA
 2) Inserire modello sysnthetic NL model ( non cambiare nomi nel file parameters.py) + capire se il jacobiano numerico dà problemi (se si calcolarlo a mano) - SASA
-3) Trovare un allenamento della rete che va bene - Tommaso 
-4) Fare plot vari e calcolare inference time - Tommaso
+3) Trovare un allenamento della rete che va bene (provare ReLU al posto di Sigmoid sull'ultimo layer) - Tommaso 
+4) Fare plot vari e calcolare inference time (MSE, Inference Time, Loss, State Pred vs State Ground Truth) - Tommaso
 5) Pulire codice da commenti che non fanno nulla - SASA
-6) Riprovare codice KalmanNet con synthetic NL model e aggiungere un paio di grafici anche per quello - Tommasso
-7) Fare una riunione con Zorzi - Tutti insieme
+6) Riprovare codice KalmanNet con synthetic NL model e aggiungere un paio di grafici anche per quello - Tommaso
+7) Cambiare parametri REKF
+8) Fare una riunione con Zorzi - Tutti insieme
 
 Question to be answered:
