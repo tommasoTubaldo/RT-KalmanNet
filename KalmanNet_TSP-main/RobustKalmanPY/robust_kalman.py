@@ -6,66 +6,60 @@ import torch
 from KNet.RT_KalmanNet_nn import RT_KalmanNet_nn
 
 #%%
-
 # NOTE! There is a combination of numpy and torch thus if changing something use Tensors!
-# torch.autograd.functional.jacobian jacobian from a function and tensor
 class RobustKalman():
     def __init__(self, SysModel, test_data, c : float = 1e-3, hard_coded: bool = False,use_nn: bool = False):
         
+        # Select whether to use the NN or regular REKF model
         self.use_nn = use_nn
         
-        self.model = SysModel # Store the system model for f and h
-        self.x0 = torch.transpose(SysModel.m1x_0, 0, 1) # x0 row vector (1,2)
+        # Import the model from the SysModel class
+        self.model = SysModel 
+        self.x0 = torch.transpose(SysModel.m1x_0, 0, 1)
         self.Q = SysModel.Q
         self.R = SysModel.R
-        self.T = SysModel.T # The number of samples in the test data
+        self.T = SysModel.T 
         self.y = test_data
         self.c = torch.tensor(c)
         self.hard_coded = hard_coded
         
-        # Preallocation of memory
+        # Preallocation of memory for the computation
         self.n = torch.Tensor.numpy(self.Q).shape[0] #state dimension
         self.p = torch.Tensor.numpy(self.R).shape[0] #output dimension
-        
-        #when reordering code put an if statement here to declare with or without requires_grad=True
-        self.Xrekf = torch.zeros(self.n, self.T+1, requires_grad=True) #allocation of memory to save \hat x_t
+        if self.use_nn:
+            self.Xrekf = torch.zeros(self.n, self.T+1, requires_grad=True) 
+        else:
+            self.Xrekf = torch.zeros(self.n, self.T+1)  
         self.Xrekf_prev = self.x0.squeeze(0)
-
-        
-        self.Xn = torch.zeros(self.n, self.T) #allocation of memory to save \hat x_t|t
-        
-        self.V = torch.zeros(self.n, self.n, self.T+1) #allocation of memory to save V_t
+        self.Xn = torch.zeros(self.n, self.T)
+        self.V = torch.zeros(self.n, self.n, self.T+1) 
         self.V_prev = 1e-3*torch.eye(2, 2)
-        
-        self.A = torch.zeros(self.n, self.n, self.T) #allocation of memory to save the linearizatio of state equation
-        self.C = torch.zeros(self.p, self.n, self.T) #allocation of memory to save the linearizatio of output equation
+        self.A = torch.zeros(self.n, self.n, self.T) 
+        self.C = torch.zeros(self.p, self.n, self.T) 
         self.G = torch.zeros(self.n, self.p, self.T)
-        self.th = torch.zeros(self.T) #allocation of memory to save the values of theta
+        self.th = torch.zeros(self.T) 
         
         if self.use_nn:
             print("Using Neural Network")
             self.nn = RT_KalmanNet_nn(self.p,10,[50],1) 
         
-    # Numerical Jacobian Computation (This is important for us since we are using the non-linear model)
+    # Below one can choose to use either the closed form Jacobian or the numerical one from Pytorch
     def fnComputeJacobianF(self, x_n_temp):
-        # Hard coded version for translation debugging
         if self.hard_coded:
-            f_jac = torch.tensor([[1/10, 1-(torch.sin(x_n_temp[1]/10)/10)],[0, 49/50]])
+            f_jac = torch.tensor([[self.model.alpha*self.model.beta*(torch.cos(self.model.phi+ self.model.beta*x_n_temp[0])), 0],[0, self.model.alpha*self.model.beta*(torch.cos(self.model.phi+ self.model.beta*x_n_temp[1]))]])
         else:
             f_jac = torch.autograd.functional.jacobian(self.model.f, x_n_temp)
         return f_jac
     
     def fnComputeJacobianH(self, x_rekf_temp):
-        # Hard coded version for translation debugging
         if self.hard_coded:
-            h_jac = torch.tensor([[1-2*x_rekf_temp[0], 2*x_rekf_temp[1]-1]])
+            h_jac = torch.tensor([[2*self.model.a*self.model.b*(self.model.c + self.model.b*x_rekf_temp[0]), 0],[0, 2*self.model.a*self.model.b*(self.model.c + self.model.b*x_rekf_temp[1])]])
         else:
             h_jac = torch.autograd.functional.jacobian(self.model.h,x_rekf_temp)
             
         return h_jac
     
     def fnComputeTheta(self, P_pred):
-        # NOTE: In the computation of theta there seems to be something wrong!
         
         value = torch.tensor([1])
         t1 = torch.tensor([0])
@@ -110,9 +104,10 @@ class RobustKalman():
             self.Xrekf[:, i + 1] = torch.squeeze(self.model.f(self.Xn[:, i]))
             self.Xrekf_prev = self.Xrekf[:, i+1]
             
-            # P_t+1 - The massive fucking Riccati equation
+            # P_t+1 
             P = self.A[:, :, i] @ self.V_prev @ torch.transpose(self.A[:, :, i], 0, 1) - self.A[:, :, i] @ self.V_prev @ torch.transpose(self.C[:, :, i], 0, 1) @ torch.linalg.solve(self.C[:, :, i] @ self.V_prev @ torch.transpose(self.C[:, :, i], 0, 1) + self.R,torch.eye(self.p)) @ self.C[:, :, i] @ self.V_prev @ torch.transpose(self.A[:, :, i], 0, 1) + self.Q
             
+            # In case the NN is used recompute the c parameter i.e. the radius of the ball
             if self.use_nn:
                 self.c = self.nn(self.y[:,i] - hn)
                 
