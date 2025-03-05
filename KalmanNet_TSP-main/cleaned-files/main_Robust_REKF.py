@@ -3,6 +3,7 @@
 
 #%%
 import torch
+from torch.nn.functional import mse_loss
 import Simulations.config as config
 import matplotlib.pyplot as plt
 import math
@@ -120,6 +121,9 @@ REKF = RobustKalman(sys_model, train_input, 1e-3, True, False)
 
 [Xrekf, _] = REKF.fnREKF()
 
+mse_rekf = mse_loss(Xrekf[:,:Xrekf.size()[1]-1], train_target)
+print(f"\nTest MSE REKF: {mse_rekf.item():.4f}")
+
 #%% Test plot of data
 
 plt.figure()
@@ -143,72 +147,73 @@ sys_model.m1x_0 = torch.zeros(m,1)
 RT_KalmanNet = RobustKalman(sys_model, train_input,1e-3,True,True)
 model = RT_KalmanNet
 
-# Learning rate and number of epochs
-lr = 0.01 
-epochs = 50 
+# Hyper-parameters
+lr = 1e-3   # learning rate
+epochs = 1    # defining the number of epochs
+wd = 1e-3   # weight decay
 
-optimizer = optim.Adam(RT_KalmanNet.nn.parameters(), lr=lr)
-criterion = nn.MSELoss()  
+optimizer = optim.Adam(RT_KalmanNet.nn.parameters(), lr=lr, weight_decay=wd)
+criterion = nn.MSELoss(reduction='mean')  # Minimizing the square error wrt the state estimate
 
 for epoch in range(epochs):
-    print(f"Epoch {epoch + 1}/{epochs}")
 
     # Generate data
     DataGen(args, sys_model, DatafolderName + dataFileName[0])
     [train_input, train_target, _, _, _, _, _, _, _] = torch.load(DatafolderName + dataFileName[0], map_location=device)
 
-    # Preprocess data
-    train_input = torch.squeeze(train_input)  
+    # Normalize data
+    train_input = torch.squeeze(train_input)
     train_target = torch.squeeze(train_target)
 
     # Zeroing gradients
     optimizer.zero_grad()
 
-    #change the input
+    # Set input
     RT_KalmanNet.y = train_input
 
     # Forward pass
-    [Xrekf, _] = RT_KalmanNet.fnREKF()
+    [Xrekf,_,_] = RT_KalmanNet.fnREKF(train=True)
     Xrekf = Xrekf[:, 1:]
-
-    # Check gradient flow
-    #print("requires_grad:", Xrekf.requires_grad)
 
     # Compute loss
     loss = criterion(Xrekf, train_target)
-    print(f"Loss: {loss.item()}")
 
     # Backward pass
-    loss.backward(retain_graph=True )
+    loss.backward(retain_graph=True)
 
     # Optimization step
     optimizer.step()
-    #print("Optimizer step completed")
 
-    #print("Epoch completed\n")
+    if (epoch + 1) % 10 == 0:
+        print(f'Epoch {epoch + 1}/{epochs}, Loss: {loss.item():.4f}')
 
 print("Training finished")
 #%% ##################### TEST OF RT-KalmanNet #########################
 
 DataGen(args, sys_model, DatafolderName + dataFileName[0])
-[train_input, train_target, _, _, _, _, _, _, _] = torch.load(DatafolderName + dataFileName[0], map_location=device)
+[test_input, test_target, _, _, _, _, _, _, _] = torch.load(DatafolderName + dataFileName[0], map_location=device)
 
 # Preprocess data - removing unecessary dimensions
-train_input = torch.squeeze(train_input)  
-train_target = torch.squeeze(train_target)
+test_input = torch.squeeze(test_input)
+test_target = torch.squeeze(test_target)
 
 # Compute the RT-KalmaNet prediction
-RT_KalmanNet.y = train_input
-[Xrekf, _] = RT_KalmanNet.fnREKF()
+RT_KalmanNet.y = test_input
+[Xrekf,_,comp_time] = RT_KalmanNet.fnREKF()
 Xrekf = Xrekf[:, 1:].detach()
 
-# Plot for comparison
-plt.figure()
+test_loss = criterion(Xrekf, test_target)
+print("#####  Test RT-KalmanNet  #####",f"\nMSE: {test_loss.item():.4f}",f"\nComputational Time: {comp_time:.4f}")
 
-plt.subplot(211)
-plt.plot(torch.transpose(train_target,0, 1),color ='red' , label='train target')
-plt.plot(torch.transpose(Xrekf, 0, 1),color = 'blue' , label = 'estimated values')
-plt.title("X_n")
+
+# Plot Prediction vs Target State
+plt.figure()    # figsize = (50, 20)
+plt.plot(torch.transpose(test_target,0, 1),color ='red' , label='Test Target')
+plt.plot(torch.transpose(Xrekf.detach(), 0, 1),color = 'blue' , label = 'Test Estimates')
+plt.legend()
+#plt.xlabel('Sample', fontsize=16)
+plt.ylabel('State', fontsize=16)
+plt.title("Test Prediction vs Target State")
 
 plt.show()
 

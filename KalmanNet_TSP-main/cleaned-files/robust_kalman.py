@@ -1,8 +1,8 @@
 #%% Basic libraries for matrix manipulation and math functions
 
-import math
-import numpy as np
 import torch
+import time
+import torch.nn.functional as func
 from KNet.RT_KalmanNet_nn import RT_KalmanNet_nn
 
 #%%
@@ -76,46 +76,65 @@ class RobustKalman():
                 t1 = theta
         
         return theta
-    
+
     # Computation of the REKF
-    def fnREKF(self):
+    def fnREKF(self, train: bool = False):
+        # Setting the NN to training or evaluation
+        if self.use_nn:
+            if train:
+                self.nn.train()
+            else:
+                self.nn.eval()
+                torch.no_grad()
+
+        start = time.time()
+
+        # Forward Step
         for i in range(0, self.T):
-            
+
             # C_t
             self.C[:, :, i] = self.fnComputeJacobianH(self.Xrekf_prev)
-            
+
             # L_t
-            L = self.V_prev @ torch.transpose(self.C[:,:,i], 0, 1) @ torch.linalg.solve(self.C[:,:,i] @ self.V_prev @ torch.transpose(self.C[:,:,i], 0, 1) + self.R,torch.eye(self.p))
-            
+            L = self.V_prev @ torch.transpose(self.C[:, :, i], 0, 1) @ torch.linalg.solve(
+                self.C[:, :, i] @ self.V_prev @ torch.transpose(self.C[:, :, i], 0, 1) + self.R, torch.eye(self.p))
+
             # h(\hat x_t)
             hn = self.model.h(self.Xrekf_prev)
-            
+
             # \hat x_t|t
-            self.Xn[:, i] = self.Xrekf_prev + (L @ (self.y[:,i] - hn))
-            
+            self.Xn[:, i] = self.Xrekf_prev + (L @ (self.y[:, i] - hn))
+
             # A_t
-            self.A[:, :, i] = self.fnComputeJacobianF(self.Xn[:,i])
-            
+            self.A[:, :, i] = self.fnComputeJacobianF(self.Xn[:, i])
+
             # G_t
             self.G[:, :, i] = self.A[:, :, i] @ L
-            
+
             # \hat x_t+1
             self.Xrekf = self.Xrekf.clone()
             self.Xrekf[:, i + 1] = torch.squeeze(self.model.f(self.Xn[:, i]))
-            self.Xrekf_prev = self.Xrekf[:, i+1]
-            
-            # P_t+1 
-            P = self.A[:, :, i] @ self.V_prev @ torch.transpose(self.A[:, :, i], 0, 1) - self.A[:, :, i] @ self.V_prev @ torch.transpose(self.C[:, :, i], 0, 1) @ torch.linalg.solve(self.C[:, :, i] @ self.V_prev @ torch.transpose(self.C[:, :, i], 0, 1) + self.R,torch.eye(self.p)) @ self.C[:, :, i] @ self.V_prev @ torch.transpose(self.A[:, :, i], 0, 1) + self.Q
-            
-            # In case the NN is used recompute the c parameter i.e. the radius of the ball
+            self.Xrekf_prev = self.Xrekf[:, i + 1]
+
+            # P_t+1
+            P = self.A[:, :, i] @ self.V_prev @ torch.transpose(self.A[:, :, i], 0, 1) - self.A[:, :,i] @ self.V_prev @ torch.transpose(self.C[:, :, i], 0, 1) @ torch.linalg.solve(self.C[:, :, i] @ self.V_prev @ torch.transpose(self.C[:, :, i], 0, 1) + self.R,torch.eye(self.p)) @ self.C[:, :, i] @ self.V_prev @ torch.transpose(self.A[:, :, i], 0, 1) + self.Q
+
             if self.use_nn:
-                self.c = self.nn(self.y[:,i] - hn)
-                
+                # Compute the Innovation Difference
+                delta_y = self.y[:, i] - hn
+
+                # Forward Step
+                self.c = self.nn(delta_y)
+
             # th_t
             self.th[i] = self.fnComputeTheta(P)
-            
+
             # V_t+1
-            self.V[:, :, i+1] = torch.linalg.solve(torch.linalg.solve(P,torch.eye(self.n)) - self.th[i] * torch.eye(self.n),torch.eye(self.n))
-            self.V_prev = self.V[:, :, i+1]
-            
-        return [self.Xrekf, self.V]
+            self.V[:, :, i + 1] = torch.linalg.solve(
+                torch.linalg.solve(P, torch.eye(self.n)) - self.th[i] * torch.eye(self.n), torch.eye(self.n))
+            self.V_prev = self.V[:, :, i + 1]
+
+        end = time.time()
+        t = end - start
+
+        return [self.Xrekf, self.V, t]
