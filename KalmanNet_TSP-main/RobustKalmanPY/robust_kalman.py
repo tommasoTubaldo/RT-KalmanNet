@@ -40,8 +40,7 @@ class RobustKalman():
         self.th = torch.zeros(self.T) 
         
         if self.use_nn:
-            print("Using Neural Network")
-            self.nn = RT_KalmanNet_nn(self.p,10,[50],1) 
+            self.nn = RT_KalmanNet_nn(self.p,10,[50],1)
         
     # Below one can choose to use either the closed form Jacobian or the numerical one from Pytorch
     def fnComputeJacobianF(self, x_n_temp):

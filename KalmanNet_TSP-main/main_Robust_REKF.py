@@ -7,14 +7,16 @@ from torch.nn.functional import mse_loss
 import Simulations.config as config
 import matplotlib.pyplot as plt
 import math
-
+import torch.optim as optim
+import torch.nn as nn
 from datetime import datetime
 from Simulations.Synthetic_NL_model.parameters import Q_structure, R_structure,m,n,m1x_0,m2x_0, \
     f,h
 from Simulations.Extended_sysmdl import SystemModel
 from Simulations.utils import DataGen
 from RobustKalmanPY.robust_kalman import RobustKalman
-
+import warnings
+warnings.simplefilter("ignore", category=FutureWarning)
 # KalmanNet
 from Pipelines.Pipeline_EKF import Pipeline_EKF
 from KNet.KalmanNet_nn import KalmanNetNN
@@ -100,66 +102,50 @@ train_target = torch.squeeze(train_target)
 print("trainset input size:",train_input.size())
 print("trainset target size:",train_target.size())
 
-#%% Test plot of data
-
-plt.figure()
-
-plt.subplot(211)
-plt.plot(torch.transpose(train_target,0, 1))
-plt.title("X_n")
-
-plt.subplot(212)
-plt.plot(torch.transpose(train_input,0, 1))
-plt.title("Y_n")
-
-plt.show()
-
 # %% test of REKF on a test sample
 
 sys_model.m1x_0 = torch.zeros(m,1)
 REKF = RobustKalman(sys_model, train_input, 1e-3, True, False)
 
-[Xrekf, _] = REKF.fnREKF()
+[Xrekf,_,comp_time_rekf] = REKF.fnREKF()
 
 mse_rekf = mse_loss(Xrekf[:,:Xrekf.size()[1]-1], train_target)
-print(f"\nTest MSE REKF: {mse_rekf.item():.4f}")
+print("\n#####   Test REKF   #####",f"\nMSE: {mse_rekf.item():.4f}",f"\nComputational Time: {comp_time_rekf:.4f}")
 
 #%% Test plot of data
 
 plt.figure()
 
-plt.subplot(211)
-plt.plot(torch.squeeze(torch.transpose(train_target,0, 1)).numpy()[20:-1, :],color ='red' , label='train target')
-plt.plot(torch.squeeze(torch.transpose(Xrekf, 0, 1)).numpy()[20:-1, :],color = 'blue' , label = 'estimated values')
-plt.title("X_n")
-
-plt.subplot(212)
-plt.plot(torch.transpose(train_input,0, 1))
-plt.title("Y_n")
+plt.plot(torch.squeeze(torch.transpose(train_target,0, 1)).numpy()[20:-1, :],color ='red' , label='Test Target')
+plt.plot(torch.squeeze(torch.transpose(Xrekf, 0, 1)).numpy()[20:-1, :],color = 'blue' , label = 'Estimated Values')
+plt.legend()
+plt.title("Test Prediction vs Target State")
 
 plt.show()
 
 #%% ##################### FROM HERE WE TEST THE IMPLEMENTATION OF RT-KalmanNet #########################
-import torch.optim as optim
-import torch.nn as nn
 
 sys_model.m1x_0 = torch.zeros(m,1)
 RT_KalmanNet = RobustKalman(sys_model, train_input,1e-3,True,True)
 model = RT_KalmanNet
 
 # Hyper-parameters
+epochs = 10    # defining the number of epochs
 lr = 1e-3   # learning rate
-epochs = 1    # defining the number of epochs
 wd = 1e-3   # weight decay
 
 optimizer = optim.Adam(RT_KalmanNet.nn.parameters(), lr=lr, weight_decay=wd)
 criterion = nn.MSELoss(reduction='mean')  # Minimizing the square error wrt the state estimate
 
+opt_MSE = float('inf')
+opt_model_folder = "RobustKalmanPY/"
+
+print("\n\n#####   Training RT-KalmanNet   #####\n")
 for epoch in range(epochs):
 
     # Generate data
     DataGen(args, sys_model, DatafolderName + dataFileName[0])
-    [train_input, train_target, _, _, _, _, _, _, _] = torch.load(DatafolderName + dataFileName[0], map_location=device)
+    [train_input, train_target, cv_input, cv_target, _, _, _, _, _] = torch.load(DatafolderName + dataFileName[0], map_location=device)
 
     # Normalize data
     train_input = torch.squeeze(train_input)
@@ -184,10 +170,25 @@ for epoch in range(epochs):
     # Optimization step
     optimizer.step()
 
+    # Cross-Validation
+    cv_input = torch.squeeze(cv_input)
+    cv_target = torch.squeeze(cv_target)
+
+    RT_KalmanNet.y = cv_input
+    [Xrekf,_,_] = RT_KalmanNet.fnREKF()
+    Xrekf = Xrekf[:, 1:]
+
+    cv_loss = criterion(Xrekf, cv_target)
+
+    if (cv_loss < opt_MSE):
+        opt_MSE = cv_loss
+        torch.save(RT_KalmanNet.nn, 'RobustKalmanPY/opt_RT_KNet.pt')
+
     if (epoch + 1) % 10 == 0:
         print(f'Epoch {epoch + 1}/{epochs}, Loss: {loss.item():.4f}')
 
 print("Training finished")
+print(f"Cross-Validation MSE Optimal Model: {opt_MSE.item():.4f}\n")
 #%% ##################### TEST OF RT-KalmanNet #########################
 
 DataGen(args, sys_model, DatafolderName + dataFileName[0])
@@ -197,27 +198,31 @@ DataGen(args, sys_model, DatafolderName + dataFileName[0])
 test_input = torch.squeeze(test_input)
 test_target = torch.squeeze(test_target)
 
+# Load the Optimal Model
+RT_KalmanNet.nn = torch.load('RobustKalmanPY/opt_RT_KNet.pt')
+
 # Compute the RT-KalmaNet prediction
 RT_KalmanNet.y = test_input
-[Xrekf,_,comp_time] = RT_KalmanNet.fnREKF()
+[Xrekf,_,comp_time_RT_KNet] = RT_KalmanNet.fnREKF()
 Xrekf = Xrekf[:, 1:].detach()
 
 test_loss = criterion(Xrekf, test_target)
-print("#####  Test RT-KalmanNet  #####",f"\nMSE: {test_loss.item():.4f}",f"\nComputational Time: {comp_time:.4f}")
+print("#####   Test RT-KalmanNet   #####",f"\nMSE: {test_loss.item():.4f}",f"\nComputational Time: {comp_time_RT_KNet:.4f}")
 
 
 # Plot Prediction vs Target State
 plt.figure()    # figsize = (50, 20)
-plt.plot(torch.transpose(test_target,0, 1),color ='red' , label='Test Target')
-plt.plot(torch.transpose(Xrekf.detach(), 0, 1),color = 'blue' , label = 'Test Estimates')
+plt.plot(torch.squeeze(torch.transpose(test_target,0, 1)).numpy()[20:-1, :],color ='red' , label='Test Target')
+plt.plot(torch.squeeze(torch.transpose(Xrekf, 0, 1)).numpy()[20:-1, :],color = 'blue' , label = 'Estimated Values')
 plt.legend()
 #plt.xlabel('Sample', fontsize=16)
-plt.ylabel('State', fontsize=16)
+#plt.ylabel('State', fontsize=16)
 plt.title("Test Prediction vs Target State")
 
 plt.show()
 
 #%% ##################### KalmanNet #########################
+'''
 # Needs to be adjusted for our purposes!
 ## Build Neural Network
 print("KalmanNet start")
@@ -235,3 +240,4 @@ print("Composition Loss:",args.CompositionLoss)
 
 ## Test Neural Network
 [MSE_test_linear_arr, MSE_test_linear_avg, MSE_test_dB_avg,knet_out,RunTime] = KalmanNet_Pipeline.NNTest(sys_model, test_input, test_target, path_results)
+'''
