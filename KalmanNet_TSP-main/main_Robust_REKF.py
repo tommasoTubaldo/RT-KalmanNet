@@ -39,9 +39,9 @@ args = config.general_settings()
 
 ### dataset parameters
 # N is the number of sequences to be generated
-args.N_E = 1 #length of training dataset 
-args.N_CV = 1 #length of validation dataset 
-args.N_T = 1 #length of test dataset 
+args.N_E = 1 #length of training dataset
+args.N_CV = 1 #length of validation dataset
+args.N_T = 1 #length of test dataset
 args.T = 100 #input sequence length 
 args.T_test = 100 #input test sequence length 
 
@@ -130,7 +130,7 @@ RT_KalmanNet = RobustKalman(sys_model, train_input,1e-3,True,True)
 model = RT_KalmanNet
 
 # Hyper-parameters
-epochs = 10    # defining the number of epochs
+epochs = 1    # defining the number of epochs
 lr = 1e-3   # learning rate
 wd = 1e-3   # weight decay
 
@@ -185,7 +185,7 @@ for epoch in range(epochs):
         torch.save(RT_KalmanNet.nn, 'RobustKalmanPY/opt_RT_KNet.pt')
 
     if (epoch + 1) % 10 == 0:
-        print(f'Epoch {epoch + 1}/{epochs}, Loss: {loss.item():.4f}')
+        print(f'Epoch {epoch + 1}/{epochs}, MSE Training: {loss.item():.4f}')
 
 print("Training finished")
 print(f"Cross-Validation MSE Optimal Model: {opt_MSE.item():.4f}\n")
@@ -222,14 +222,21 @@ plt.title("Test Prediction vs Target State")
 plt.show()
 
 #%% ##################### KalmanNet #########################
-'''
-# Needs to be adjusted for our purposes!
+
+args.N_E = 1000 #length of training dataset
+args.N_CV = 100 #length of validation dataset
+args.N_T = 200 #length of test dataset
+
+DataGen(args, sys_model, DatafolderName + dataFileName[0])
+print(dataFileName[0])
+[train_input,train_target, cv_input, cv_target, test_input, test_target,_,_,_] =  torch.load(DatafolderName + dataFileName[0], map_location=device)
+
 ## Build Neural Network
-print("KalmanNet start")
 KalmanNet_model = KalmanNetNN()
 KalmanNet_model.NNBuild(sys_model, args)
 
 ## Train Neural Network
+print("\n\n#####   Training KalmanNet   #####\n")
 KalmanNet_Pipeline = Pipeline_EKF(strTime, "KNet", "KalmanNet")
 KalmanNet_Pipeline.setssModel(sys_model)
 KalmanNet_Pipeline.setModel(KalmanNet_model)
@@ -240,4 +247,3 @@ print("Composition Loss:",args.CompositionLoss)
 
 ## Test Neural Network
 [MSE_test_linear_arr, MSE_test_linear_avg, MSE_test_dB_avg,knet_out,RunTime] = KalmanNet_Pipeline.NNTest(sys_model, test_input, test_target, path_results)
-'''

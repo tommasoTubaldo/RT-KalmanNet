@@ -253,15 +253,16 @@ class Pipeline_EKF:
             ########################
             ### Training Summary ###
             ########################
-            print(ti, "MSE Training :", self.MSE_train_dB_epoch[ti], "[dB]", "MSE Validation :", self.MSE_cv_dB_epoch[ti],
-                  "[dB]")
-                      
+            print(f"Epoch {ti+1}/{self.N_steps}, MSE Training: {self.MSE_train_linear_epoch[ti].item():.4f}, MSE Validation: {self.MSE_cv_linear_epoch[ti].item():.4f}")
+
+            '''
             if (ti > 1):
                 d_train = self.MSE_train_dB_epoch[ti] - self.MSE_train_dB_epoch[ti - 1]
                 d_cv = self.MSE_cv_dB_epoch[ti] - self.MSE_cv_dB_epoch[ti - 1]
                 print("diff MSE Training :", d_train, "[dB]", "diff MSE Validation :", d_cv, "[dB]")
 
             print("Optimal idx:", self.MSE_cv_idx_opt, "Optimal :", self.MSE_cv_dB_opt, "[dB]")
+            '''
 
         return [self.MSE_cv_linear_epoch, self.MSE_cv_dB_epoch, self.MSE_train_linear_epoch, self.MSE_train_dB_epoch]
 
@@ -331,12 +332,15 @@ class Pipeline_EKF:
         self.test_std_dB = 10 * torch.log10(self.MSE_test_linear_std + self.MSE_test_linear_avg) - self.MSE_test_dB_avg
 
         # Print MSE and std
+        '''
         str = self.modelName + "-" + "MSE Test:"
-        print(str, self.MSE_test_dB_avg, "[dB]")
+        print('\n',str, self.MSE_test_dB_avg, "[dB]")
         str = self.modelName + "-" + "STD Test:"
         print(str, self.test_std_dB, "[dB]")
         # Print Run Time
         print("Inference Time:", t)
+        '''
+        print("\n#####  Test RT-KalmanNet  #####", f"\nMSE: {self.MSE_test_linear_avg.item():.4f}",f"\nComputational Time: {t:.4f}")
 
         return [self.MSE_test_linear_arr, self.MSE_test_linear_avg, self.MSE_test_dB_avg, x_out_test, t]
 
