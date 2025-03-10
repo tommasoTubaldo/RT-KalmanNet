@@ -33,3 +33,9 @@ f_jac = jacobian(f(x1, x2), [x1, x2])
 
 h(x1, x2) = a * ( b* [x1; x2] + c).^2 
 h_jac = jacobian(h(x1, x2), [x1, x2])
+
+
+###  Update Meeting 10-03-2025  ###
+TO_DO: 1) Implement comparison of the three set of features: {F1,F2,F4}, {F1,F3,F4} and {F1,F2,F3,F4}
+       2) Refine the test procedure by evaluating ~20 test iterations and then taking the average of such result
+       3) Implement the comparison of Hard-coded VS Numerical Jacobian computation
