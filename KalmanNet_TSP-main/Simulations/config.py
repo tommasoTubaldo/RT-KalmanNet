@@ -59,5 +59,5 @@ def general_settings():
     parser.add_argument('--out_mult_KNet', type=int, default=40, metavar='out_mult_KNet',
                         help='output dimension multiplier for KNet')
 
-    args = parser.parse_args()
+    args, unknown = parser.parse_known_args()  # Ignores unrecognized arguments
     return args
