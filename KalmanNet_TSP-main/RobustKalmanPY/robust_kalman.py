@@ -8,7 +8,7 @@ from KNet.RT_KalmanNet_nn import RT_KalmanNet_nn
 #%%
 # NOTE! There is a combination of numpy and torch thus if changing something use Tensors!
 class RobustKalman():
-    def __init__(self, SysModel, test_data, c : float = 1e-3, hard_coded: bool = False,use_nn: bool = False):
+    def __init__(self, SysModel, test_data, c : float = 1e-3, hard_coded: bool = False,use_nn: bool = False, input_feat_mode: int = 0):
         
         # Select whether to use the NN or regular REKF model
         self.use_nn = use_nn
@@ -31,16 +31,31 @@ class RobustKalman():
         else:
             self.Xrekf = torch.zeros(self.n, self.T+1)  
         self.Xrekf_prev = self.x0.squeeze(0)
+        self.y_prev = torch.zeros(self.p)
+        self.Xn_prev = torch.zeros(self.n)
         self.Xn = torch.zeros(self.n, self.T)
         self.V = torch.zeros(self.n, self.n, self.T+1) 
         self.V_prev = 1e-3*torch.eye(2, 2)
         self.A = torch.zeros(self.n, self.n, self.T) 
         self.C = torch.zeros(self.p, self.n, self.T) 
         self.G = torch.zeros(self.n, self.p, self.T)
-        self.th = torch.zeros(self.T) 
-        
+        self.th = torch.zeros(self.T)
+
+
         if self.use_nn:
-            self.nn = RT_KalmanNet_nn(self.p,10,[50],1)
+            self.input_feat_mode = input_feat_mode
+            # Select the input feature set
+            if self.input_feat_mode == 0:   # Case {F2}
+                input_size_fcl = self.p
+            elif self.input_feat_mode == 1 or self.input_feat_mode == 2:    # Case {F1,F2,F4}, {F1,F3,F4}
+                input_size_fcl = self.p + self.p + self.n
+            elif self.input_feat_mode == 3:     # Case {F1,F2,F3,F4}
+                input_size_fcl = self.p + self.p + self.n + self.n
+            else:
+                raise SystemExit("'input_feat_mode' must be an integer value between 0 and 3")
+
+            # Initialize NN
+            self.nn = RT_KalmanNet_nn(input_size_fcl,10,[50],1)
         
     # Below one can choose to use either the closed form Jacobian or the numerical one from Pytorch
     def fnComputeJacobianF(self, x_n_temp):
@@ -113,17 +128,36 @@ class RobustKalman():
             # \hat x_t+1
             self.Xrekf = self.Xrekf.clone()
             self.Xrekf[:, i + 1] = torch.squeeze(self.model.f(self.Xn[:, i]))
-            self.Xrekf_prev = self.Xrekf[:, i + 1]
 
             # P_t+1
             P = self.A[:, :, i] @ self.V_prev @ torch.transpose(self.A[:, :, i], 0, 1) - self.A[:, :,i] @ self.V_prev @ torch.transpose(self.C[:, :, i], 0, 1) @ torch.linalg.solve(self.C[:, :, i] @ self.V_prev @ torch.transpose(self.C[:, :, i], 0, 1) + self.R,torch.eye(self.p)) @ self.C[:, :, i] @ self.V_prev @ torch.transpose(self.A[:, :, i], 0, 1) + self.Q
 
             if self.use_nn:
-                # Compute the Innovation Difference
-                delta_y = self.y[:, i] - hn
+                # Compute input features F1,F2,F3,F4
+                # F1
+                self.f1 = self.y[:,i] - self.y_prev
+
+                # F2
+                self.f2 = self.y[:, i] - hn
+
+                # F3
+                self.f3 = self.Xn[:,i] - self.Xn_prev
+
+                # F4
+                self.f4 = self.Xn[:, i] - self.Xrekf_prev
+
+                # Stacking input features [F1, F2, F4]
+                if self.input_feat_mode == 0:
+                    input_features = self.f2
+                elif self.input_feat_mode == 1:
+                    input_features = torch.cat([self.f1, self.f2, self.f4], dim=0)
+                elif self.input_feat_mode == 2:
+                    input_features = torch.cat([self.f1, self.f3, self.f4], dim=0)
+                else:
+                    input_features = torch.cat([self.f1, self.f2, self.f3, self.f4], dim=0)
 
                 # Forward Step
-                self.c = self.nn(delta_y)
+                self.c = self.nn(input_features)
 
             # th_t
             self.th[i] = self.fnComputeTheta(P)
@@ -132,6 +166,15 @@ class RobustKalman():
             self.V[:, :, i + 1] = torch.linalg.solve(
                 torch.linalg.solve(P, torch.eye(self.n)) - self.th[i] * torch.eye(self.n), torch.eye(self.n))
             self.V_prev = self.V[:, :, i + 1]
+
+            # Update Xrekf_prev
+            self.Xrekf_prev = self.Xrekf[:, i + 1]
+
+            # Update Xn_prev
+            self.Xn_prev = self.Xn[:, i]
+
+            # Update y_prev
+            self.y_prev = self.y[:,i]
 
         end = time.time()
         t = end - start

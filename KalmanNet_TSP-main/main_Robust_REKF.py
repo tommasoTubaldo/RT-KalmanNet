@@ -119,18 +119,18 @@ plt.figure()
 plt.plot(torch.squeeze(torch.transpose(train_target,0, 1)).numpy()[20:-1, :],color ='red' , label='Test Target')
 plt.plot(torch.squeeze(torch.transpose(Xrekf, 0, 1)).numpy()[20:-1, :],color = 'blue' , label = 'Estimated Values')
 plt.legend()
-plt.title("Test Prediction vs Target State")
+plt.title("Test Prediction vs Target State - REKF")
 
 plt.show()
 
 #%% ##################### FROM HERE WE TEST THE IMPLEMENTATION OF RT-KalmanNet #########################
 
 sys_model.m1x_0 = torch.zeros(m,1)
-RT_KalmanNet = RobustKalman(sys_model, train_input,1e-3,True,True)
+RT_KalmanNet = RobustKalman(sys_model, train_input,1e-3,True,True, input_feat_mode=3)
 model = RT_KalmanNet
 
 # Hyper-parameters
-epochs = 1    # defining the number of epochs
+epochs = 200    # defining the number of epochs
 lr = 1e-3   # learning rate
 wd = 1e-3   # weight decay
 
@@ -184,7 +184,7 @@ for epoch in range(epochs):
         opt_MSE = cv_loss
         torch.save(RT_KalmanNet.nn, 'RobustKalmanPY/opt_RT_KNet.pt')
 
-    if (epoch + 1) % 10 == 0:
+    if (epoch + 1) % 1 == 0:
         print(f'Epoch {epoch + 1}/{epochs}, MSE Training: {loss.item():.4f}')
 
 print("Training finished")
@@ -217,7 +217,7 @@ plt.plot(torch.squeeze(torch.transpose(Xrekf, 0, 1)).numpy()[20:-1, :],color = '
 plt.legend()
 #plt.xlabel('Sample', fontsize=16)
 #plt.ylabel('State', fontsize=16)
-plt.title("Test Prediction vs Target State")
+plt.title("Test Prediction vs Target State - RT KalmanNet")
 
 plt.show()
 
