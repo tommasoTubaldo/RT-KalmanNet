@@ -269,6 +269,9 @@ class Pipeline_EKF:
     def NNTest(self, SysModel, test_input, test_target, path_results, MaskOnState=False,\
      randomInit=False,test_init=None,load_model=False,load_model_path=None,\
         test_lengthMask=None):
+        
+        computation_time = []
+        
         # Load model
         if load_model:
             self.model = torch.load(load_model_path, map_location=self.device) 
@@ -307,6 +310,7 @@ class Pipeline_EKF:
         
         end = time.time()
         t = end - start
+        computation_time.append(t)
 
         # MSE loss
         for j in range(self.N_T):# cannot use batch due to different length and std computation  
@@ -342,7 +346,7 @@ class Pipeline_EKF:
         '''
         print("\n#####  Test RT-KalmanNet  #####", f"\nMSE: {self.MSE_test_linear_avg.item():.4f}",f"\nComputational Time: {t:.4f}")
 
-        return [self.MSE_test_linear_arr, self.MSE_test_linear_avg, self.MSE_test_dB_avg, x_out_test, t]
+        return [self.MSE_test_linear_arr, self.MSE_test_linear_avg, self.MSE_test_dB_avg, x_out_test, t, computation_time]
 
     def PlotTrain_KF(self, MSE_KF_linear_arr, MSE_KF_dB_avg):
 
