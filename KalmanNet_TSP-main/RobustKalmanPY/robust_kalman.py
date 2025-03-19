@@ -8,7 +8,7 @@ from KNet.RT_KalmanNet_nn import RT_KalmanNet_nn
 #%%
 # NOTE! There is a combination of numpy and torch thus if changing something use Tensors!
 class RobustKalman():
-    def __init__(self, SysModel, test_data, c : float = 1e-3, hard_coded: bool = False,use_nn: bool = False, input_feat_mode: int = 0):
+    def __init__(self, SysModel, test_data, c : float = 1e-3, hard_coded: bool = False,use_nn: bool = False, input_feat_mode: int = 0, hidden_layers: list = [50]):
         
         # Select whether to use the NN or regular REKF model
         self.use_nn = use_nn
@@ -55,7 +55,7 @@ class RobustKalman():
                 raise SystemExit("'input_feat_mode' must be an integer value between 0 and 3")
 
             # Initialize NN
-            self.nn = RT_KalmanNet_nn(input_size_fcl,10,[50],1)
+            self.nn = RT_KalmanNet_nn(input_size_fcl,10, hidden_layers,1)
         
     # Below one can choose to use either the closed form Jacobian or the numerical one from Pytorch
     def fnComputeJacobianF(self, x_n_temp):
