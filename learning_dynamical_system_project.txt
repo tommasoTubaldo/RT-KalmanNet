@@ -53,7 +53,7 @@ TO_DO: 1) Implement comparison of the three set of features: {F1,F2,F4}, {F1,F3,
 ###  Update Meeting 26-03-2025  ###
 TO_DO: - Test out RT-KalmanNet vs KalmanNet, by evaluating both set of features available ({F1,F2,F4}, {F1,F3,F4})** on
          the Synthetic NL model and the Lorenz attractor.
-       - Evaluate MSE, std_dev of MSE, comp_time and c_t realizations
+       - Evaluate MSE, std_dev of MSE, comp_time, std_dev of comp_time and c_t realizations
        - Report the results on a one page presentation, displaying the numerical results on a table and the realizations
          on plots
        - It is requested a code explanation too (How do we arrange it?)
