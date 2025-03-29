@@ -53,10 +53,18 @@ TO_DO: 1) Implement comparison of the three set of features: {F1,F2,F4}, {F1,F3,
 ###  Update Meeting 26-03-2025  ###
 TO_DO: - Test out RT-KalmanNet vs KalmanNet, by evaluating both set of features available ({F1,F2,F4}, {F1,F3,F4})** on
          the Synthetic NL model and the Lorenz attractor.
-       - Evaluate MSE, std_dev of MSE, comp_time, std_dev of comp_time and c_t realizations
+       - Evaluate MSE, std_dev of MSE, comp_time, std_dev of comp_time
+       - Plot c_t realizations, one for each model
        - Report the results on a one page presentation, displaying the numerical results on a table and the realizations
          on plots
        - It is requested a code explanation too (How do we arrange it?)
+         Explain the following files: 'main_robust_KNet.ipynb', 'robust_kalman.py', 'RT_KalmanNet_nn.py', 'Synthetic_NL_model/parameters.py'
 
 
 ** the actual set of features implemented on KalmanNet are {F1,F2,F3,F4}, thus we must compare with only this set of features
+
+
+Updated TO_DO:  Sasa -> Implement and test Lorenz Attractor for both models
+                Tommi -> Evaluate MSE, ... using pandas to save them (additionally test different Q and R to test out the robustness of RT_KNet)
+                Ricky -> Write the one page presentation with two main tables, one for each ss model, each composed by two main colums, one for KNet and one for RT_KNet.
+                         Add the plots for the c_t realizations too.
