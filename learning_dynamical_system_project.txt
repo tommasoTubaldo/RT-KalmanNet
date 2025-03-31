@@ -67,4 +67,4 @@ TO_DO: - Test out RT-KalmanNet vs KalmanNet, by evaluating both set of features 
 Updated TO_DO:  Sasa -> Implement and test Lorenz Attractor for both models
                 Tommi -> Evaluate MSE, ... using pandas to save them (additionally test different Q and R to test out the robustness of RT_KNet)
                 Ricky -> Write the one page presentation with two main tables, one for each ss model, each composed by two main colums, one for KNet and one for RT_KNet.
-                         Add the plots for the c_t realizations too.
+                         Add the plots for the c_t realizations too.(tabella fatta)
