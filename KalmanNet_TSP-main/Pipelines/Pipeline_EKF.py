@@ -344,7 +344,7 @@ class Pipeline_EKF:
         # Print Run Time
         print("Inference Time:", t)
         '''
-        print("\n#####  Test RT-KalmanNet  #####", f"\nMSE: {self.MSE_test_linear_avg.item():.4f}",f"\nComputational Time: {t:.4f}")
+        print("\n#####  Test KalmanNet  #####", f"\nMSE: {self.MSE_test_linear_avg.item():.4f}",f"\nComputational Time: {t:.4f}")
 
         return [self.MSE_test_linear_arr, self.MSE_test_linear_avg, self.MSE_test_dB_avg, x_out_test, t, computation_time]
 
