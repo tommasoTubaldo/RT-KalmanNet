@@ -101,6 +101,8 @@ class RobustKalman():
                 self.nn.eval()
                 torch.no_grad()
 
+            self.c_array = []
+
         start = time.time()
 
         # Forward Step
@@ -134,16 +136,9 @@ class RobustKalman():
 
             if self.use_nn:
                 # Compute input features F1,F2,F3,F4
-                # F1
                 self.f1 = self.y[:,i] - self.y_prev
-
-                # F2
                 self.f2 = self.y[:, i] - hn
-
-                # F3
                 self.f3 = self.Xn[:,i] - self.Xn_prev
-
-                # F4
                 self.f4 = self.Xn[:, i] - self.Xrekf_prev
 
                 # Stacking input features [F1, F2, F4]
@@ -158,6 +153,8 @@ class RobustKalman():
 
                 # Forward Step
                 self.c = self.nn(input_features)
+
+                self.c_array.append(self.c)
 
             # th_t
             self.th[i] = self.fnComputeTheta(P)
@@ -179,4 +176,7 @@ class RobustKalman():
         end = time.time()
         t = end - start
 
-        return [self.Xrekf, self.V, t]
+        if self.use_nn:
+            return [self.Xrekf, self.c_array, self.V, t]
+        else:
+            return [self.Xrekf, self.V, t]

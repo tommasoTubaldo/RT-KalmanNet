@@ -270,7 +270,7 @@ class Pipeline_EKF:
      randomInit=False,test_init=None,load_model=False,load_model_path=None,\
         test_lengthMask=None):
         
-        computation_time = []
+        computational_time = []
         
         # Load model
         if load_model:
@@ -301,16 +301,15 @@ class Pipeline_EKF:
         start = time.time()
 
         if (randomInit):
-            self.model.InitSequence(test_init, SysModel.T_test)               
+            self.model.InitSequence(test_init, SysModel.T_test)
         else:
-            self.model.InitSequence(SysModel.m1x_0.reshape(1,SysModel.m,1).repeat(self.N_T,1,1), SysModel.T_test)         
-        
+            self.model.InitSequence(SysModel.m1x_0.reshape(1,SysModel.m,1).repeat(self.N_T,1,1), SysModel.T_test)
+
         for t in range(0, SysModel.T_test):
-            x_out_test[:,:, t] = torch.squeeze(self.model(torch.unsqueeze(test_input[:,:, t],2)))
+            x_out_test[:,:,t] = torch.squeeze(self.model(torch.unsqueeze(test_input[:,:, t],2)))
         
         end = time.time()
         t = end - start
-        computation_time.append(t)
 
         # MSE loss
         for j in range(self.N_T):# cannot use batch due to different length and std computation  
@@ -344,9 +343,8 @@ class Pipeline_EKF:
         # Print Run Time
         print("Inference Time:", t)
         '''
-        print("\n#####  Test KalmanNet  #####", f"\nMSE: {self.MSE_test_linear_avg.item():.4f}",f"\nComputational Time: {t:.4f}")
 
-        return [self.MSE_test_linear_arr, self.MSE_test_linear_avg, self.MSE_test_dB_avg, x_out_test, t, computation_time]
+        return [self.MSE_test_linear_arr, self.MSE_test_linear_avg, self.MSE_test_dB_avg, x_out_test, t]
 
     def PlotTrain_KF(self, MSE_KF_linear_arr, MSE_KF_dB_avg):
 
