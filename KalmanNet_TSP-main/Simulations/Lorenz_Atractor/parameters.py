@@ -95,6 +95,24 @@ def f(x, jacobian=False):
     else:
         return torch.bmm(F, x)
 
+def f_nobatch(x, jacobian = False):
+    '''
+    BX = torch.zeros([x.shape[0],m,m]).float().to(x.device) #[batch_size, m, m]
+    BX[:,1,0] = torch.squeeze(-x[:,2,:]) 
+    BX[:,2,0] = torch.squeeze(x[:,1,:]) 
+    '''
+    Const = C.to(x.device)
+    A = torch.add(x, Const) 
+    # Taylor Expansion for F    
+    F = torch.eye(m).to(x.device)
+    for j in range(1,J+1):
+        F_add = (torch.matrix_power(A*delta_t, j)/math.factorial(j))
+        F = torch.add(F, F_add)
+    if jacobian:
+        return torch.matmul(F, x), F
+    else:
+        return torch.matmul(F, x)
+    
 ### fInacc will be fed to filters and KNet, note that the mismatch comes from delta_t and J_mod
 def fInacc(x, jacobian=False):
     BX = torch.zeros([x.shape[0],m,m]).float().to(x.device) #[batch_size, m, m]
@@ -158,6 +176,15 @@ def hRotate(x, jacobian=False):
         return torch.bmm(H,x), H
     else:
         return torch.bmm(H,x)
+    
+def hRotate_nobatch(x, jacobian = False):
+    H = H_Rotate.to(x.device)
+    y = torch.matmul(H,x)
+    if jacobian:
+        return y, H
+    else:
+        return y
+    
 
 def h_nobatch(x, jacobian=False):
     H = H_design.to(x.device)

@@ -8,7 +8,7 @@ from KNet.RT_KalmanNet_nn import RT_KalmanNet_nn
 #%%
 # NOTE! There is a combination of numpy and torch thus if changing something use Tensors!
 class RobustKalman():
-    def __init__(self, SysModel, test_data, c : float = 1e-3, hard_coded: bool = False,use_nn: bool = False, input_feat_mode: int = 0, hidden_layers: list = [50]):
+    def __init__(self, SysModel, test_data, c : float = 1e-3, hard_coded: bool = False,use_nn: bool = False, input_feat_mode: int = 0, hidden_layers: list = [50], sl_model: int = 0):
         
         # Select whether to use the NN or regular REKF model
         self.use_nn = use_nn
@@ -22,20 +22,28 @@ class RobustKalman():
         self.y = test_data
         self.c = torch.tensor(c)
         self.hard_coded = hard_coded
+        self.sl_model = sl_model
         
         # Preallocation of memory for the computation
         self.n = torch.Tensor.numpy(self.Q).shape[0] #state dimension
         self.p = torch.Tensor.numpy(self.R).shape[0] #output dimension
+        
         if self.use_nn:
             self.Xrekf = torch.zeros(self.n, self.T+1, requires_grad=True) 
         else:
             self.Xrekf = torch.zeros(self.n, self.T+1)  
+            
         self.Xrekf_prev = self.x0.squeeze(0)
         self.y_prev = torch.zeros(self.p)
         self.Xn_prev = torch.zeros(self.n)
         self.Xn = torch.zeros(self.n, self.T)
         self.V = torch.zeros(self.n, self.n, self.T+1) 
-        self.V_prev = 1e-3*torch.eye(2, 2)
+        
+        if self.sl_model == 0:
+            self.V_prev = 1e-3*torch.eye(2, 2)
+        else:
+            self.V_prev = 1e-3*torch.eye(3, 3)
+            
         self.A = torch.zeros(self.n, self.n, self.T) 
         self.C = torch.zeros(self.p, self.n, self.T) 
         self.G = torch.zeros(self.n, self.p, self.T)
@@ -112,6 +120,7 @@ class RobustKalman():
             self.C[:, :, i] = self.fnComputeJacobianH(self.Xrekf_prev)
 
             # L_t
+
             L = self.V_prev @ torch.transpose(self.C[:, :, i], 0, 1) @ torch.linalg.solve(
                 self.C[:, :, i] @ self.V_prev @ torch.transpose(self.C[:, :, i], 0, 1) + self.R, torch.eye(self.p))
 
