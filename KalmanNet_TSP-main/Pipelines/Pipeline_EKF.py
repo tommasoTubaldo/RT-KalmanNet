@@ -45,7 +45,7 @@ class Pipeline_EKF:
 
         # Use the optim package to define an Optimizer that will update the weights of
         # the model for us. Here we will use Adam; the optim package contains many other
-        # optimization algoriths. The first argument to the Adam constructor tells the
+        # optimization algorithms. The first argument to the Adam constructor tells the
         # optimizer which Tensors it should update.
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.learningRate, weight_decay=self.weightDecay)
 
@@ -270,7 +270,7 @@ class Pipeline_EKF:
      randomInit=False,test_init=None,load_model=False,load_model_path=None,\
         test_lengthMask=None):
         
-        computational_time = []
+        comp_time = []
         
         # Load model
         if load_model:
@@ -298,18 +298,19 @@ class Pipeline_EKF:
         self.model.init_hidden_KNet()
         torch.no_grad()
 
-        start = time.time()
-
         if (randomInit):
             self.model.InitSequence(test_init, SysModel.T_test)
         else:
             self.model.InitSequence(SysModel.m1x_0.reshape(1,SysModel.m,1).repeat(self.N_T,1,1), SysModel.T_test)
 
+        start = time.time()
+
         for t in range(0, SysModel.T_test):
-            x_out_test[:,:,t] = torch.squeeze(self.model(torch.unsqueeze(test_input[:,:, t],2)))
-        
+            x_out_test[:,:,t] = torch.squeeze(self.model(torch.unsqueeze(test_input[:,:,t],2)))
+
         end = time.time()
-        t = end - start
+        comp_time.append(end - start)
+
 
         # MSE loss
         for j in range(self.N_T):# cannot use batch due to different length and std computation  
@@ -344,7 +345,7 @@ class Pipeline_EKF:
         print("Inference Time:", t)
         '''
 
-        return [self.MSE_test_linear_arr, self.MSE_test_linear_avg, self.MSE_test_dB_avg, x_out_test, t]
+        return [self.MSE_test_linear_arr, self.MSE_test_linear_avg, self.MSE_test_dB_avg, x_out_test, comp_time]
 
     def PlotTrain_KF(self, MSE_KF_linear_arr, MSE_KF_dB_avg):
 
