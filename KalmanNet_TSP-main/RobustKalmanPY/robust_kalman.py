@@ -163,7 +163,7 @@ class RobustKalman():
                 # Forward Step
                 self.c = self.nn(input_features)
 
-                self.c_array.append(self.c)
+                self.c_array.append(self.c.item())
 
             # th_t
             self.th[i] = self.fnComputeTheta(P)
