@@ -270,8 +270,6 @@ class Pipeline_EKF:
      randomInit=False,test_init=None,load_model=False,load_model_path=None,\
         test_lengthMask=None):
         
-        comp_time = []
-        
         # Load model
         if load_model:
             self.model = torch.load(load_model_path, map_location=self.device) 
@@ -305,12 +303,16 @@ class Pipeline_EKF:
 
         start = time.time()
 
+        '''
+        Dimensions of the array involved:
+        test_input.size() = [N_T, 2, T_test]
+        torch.unsqueeze(test_input[i,:,t],2).size() = [N_T, 2, 1]
+        '''
         for t in range(0, SysModel.T_test):
             x_out_test[:,:,t] = torch.squeeze(self.model(torch.unsqueeze(test_input[:,:,t],2)))
 
         end = time.time()
-        comp_time.append(end - start)
-
+        comp_time = end - start
 
         # MSE loss
         for j in range(self.N_T):# cannot use batch due to different length and std computation  
