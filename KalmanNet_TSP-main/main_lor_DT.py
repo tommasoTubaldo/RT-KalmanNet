@@ -15,7 +15,7 @@ from KNet.KalmanNet_nn import KalmanNetNN
 
 # Important for the Lorentz_Attractor!
 from Simulations.Lorenz_Atractor.parameters import m1x_0, m2x_0, m, n,\
-f, h, hRotate, H_Rotate, H_Rotate_inv, Q_structure, R_structure
+f_gen,f, h, hRotate, H_Rotate, H_Rotate_inv, Q_structure, R_structure
 
 print("Pipeline Start")
 ################

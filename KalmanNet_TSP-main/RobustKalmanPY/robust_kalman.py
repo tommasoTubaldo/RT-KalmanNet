@@ -8,7 +8,7 @@ from KNet.RT_KalmanNet_nn import RT_KalmanNet_nn
 #%%
 # NOTE! There is a combination of numpy and torch thus if changing something use Tensors!
 class RobustKalman():
-    def __init__(self, SysModel, test_data, c : float = 1e-3, hard_coded: bool = False,use_nn: bool = False, input_feat_mode: int = 0, hidden_layers: list = [50], sl_model: int = 0):
+    def __init__(self, SysModel, test_data, c : float = 1e-3, hard_coded: bool = False,use_nn: bool = False, input_feat_mode: int = 0, hidden_layers: list = [50], sl_model: int = 0, set_noise_matrices: bool = False, Q_mat = torch.eye(3), R_mat = torch.eye(3)):
         
         # Select whether to use the NN or regular REKF model
         self.use_nn = use_nn
@@ -16,8 +16,15 @@ class RobustKalman():
         # Import the model from the SysModel class
         self.model = SysModel 
         self.x0 = torch.transpose(SysModel.m1x_0, 0, 1)
-        self.Q = SysModel.Q
-        self.R = SysModel.R
+        # Setting the noise covariance matrices
+        if set_noise_matrices:
+            # In case the sys_model matrices are not used
+            self.Q = Q_mat
+            self.R = R_mat
+        else:
+            # In case we are using the same noise matrices which generated the data
+            self.Q = SysModel.Q
+            self.R = SysModel.R
         self.T = SysModel.T 
         self.y = test_data
         self.c = torch.tensor(c)
@@ -70,6 +77,11 @@ class RobustKalman():
         if self.hard_coded:
             f_jac = torch.tensor([[self.model.alpha*self.model.beta*(torch.cos(self.model.phi+ self.model.beta*x_n_temp[0])), 0],[0, self.model.alpha*self.model.beta*(torch.cos(self.model.phi+ self.model.beta*x_n_temp[1]))]])
         else:
+            '''
+            if self.sl_model == 1:
+                f_jac = torch.squeeze(torch.autograd.functional.jacobian(self.model.f, x_n_temp))
+            else:
+            '''
             f_jac = torch.autograd.functional.jacobian(self.model.f, x_n_temp)
         return f_jac
     
@@ -129,7 +141,12 @@ class RobustKalman():
 
             # \hat x_t|t
             self.Xn[:, i] = self.Xrekf_prev + (L @ (self.y[:, i] - hn))
-
+            '''
+            if self.sl_model == 1:
+                # A_t
+                self.A[:, :, i] = self.fnComputeJacobianF(self.Xn[:, i].reshape(1,3,1))
+            else:
+                '''
             # A_t
             self.A[:, :, i] = self.fnComputeJacobianF(self.Xn[:, i])
 
@@ -138,11 +155,16 @@ class RobustKalman():
 
             # \hat x_t+1
             self.Xrekf = self.Xrekf.clone()
+            '''
+            if self.sl_model == 1:
+                self.Xrekf[:, i + 1] = torch.squeeze(self.model.f(self.Xn[:, i].reshape(1,3,1)))
+            else:
+            '''
             self.Xrekf[:, i + 1] = torch.squeeze(self.model.f(self.Xn[:, i]))
 
             # P_t+1
             P = self.A[:, :, i] @ self.V_prev @ torch.transpose(self.A[:, :, i], 0, 1) - self.A[:, :,i] @ self.V_prev @ torch.transpose(self.C[:, :, i], 0, 1) @ torch.linalg.solve(self.C[:, :, i] @ self.V_prev @ torch.transpose(self.C[:, :, i], 0, 1) + self.R,torch.eye(self.p)) @ self.C[:, :, i] @ self.V_prev @ torch.transpose(self.A[:, :, i], 0, 1) + self.Q
-
+            #print(P)
             if self.use_nn:
                 # Compute input features F1,F2,F3,F4
                 self.f1 = self.y[:,i] - self.y_prev

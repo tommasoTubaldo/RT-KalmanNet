@@ -4,7 +4,6 @@ Update 2023-02-06: f and h support batch size speed up
 
 """
 
-
 import torch
 import math
 torch.pi = torch.acos(torch.zeros(1)).item() * 2 # which is 3.1415927410125732
@@ -78,6 +77,7 @@ def f_gen(x, jacobian=False):
         return torch.bmm(F, x)
 
 ### f will be fed to filters and KNet, note that the mismatch comes from delta_t
+
 def f(x, jacobian=False):
     BX = torch.zeros([x.shape[0],m,m]).float().to(x.device) #[batch_size, m, m]
     BX[:,1,0] = torch.squeeze(-x[:,2,:]) 
@@ -94,25 +94,47 @@ def f(x, jacobian=False):
         return torch.bmm(F, x), F
     else:
         return torch.bmm(F, x)
-
-def f_nobatch(x, jacobian = False):
-    '''
-    BX = torch.zeros([x.shape[0],m,m]).float().to(x.device) #[batch_size, m, m]
-    BX[:,1,0] = torch.squeeze(-x[:,2,:]) 
-    BX[:,2,0] = torch.squeeze(x[:,1,:]) 
-    '''
+    
+'''
+def f_nobatch(x):
+    B = torch.zeros(3,3)
     Const = C.to(x.device)
-    A = torch.add(x, Const) 
+    A = torch.add(B, Const) 
+    x_temp = x.squeeze()
+    A[1, 2] = -x_temp[1]
+    A[2, 1] = x_temp[1]
     # Taylor Expansion for F    
     F = torch.eye(m).to(x.device)
     for j in range(1,J+1):
         F_add = (torch.matrix_power(A*delta_t, j)/math.factorial(j))
         F = torch.add(F, F_add)
-    if jacobian:
-        return torch.matmul(F, x), F
-    else:
-        return torch.matmul(F, x)
-    
+
+    return torch.matmul(F, x)
+'''
+
+def f_nobatch(x):
+    B = torch.zeros(3, 3, device=x.device)
+    Const = C.to(x.device)
+
+    A = B + Const  # or A = Const.clone() if Const is a leaf tensor
+
+    x_temp = x.view(-1)  # or x.squeeze()
+
+    # Instead of in-place assignment, use out-of-place construction:
+    A = A.clone()  # ensure we’re not modifying a leaf or shared tensor
+    A = A + torch.tensor([
+        [0., 0., 0.],
+        [0., 0., -x_temp[1]],
+        [0., x_temp[1], 0.]
+    ], device=x.device)
+
+    F = torch.eye(m, device=x.device)
+    for j in range(1, J + 1):
+        F_add = (torch.matrix_power(A * delta_t, j) / math.factorial(j))
+        F = F + F_add
+
+    return F @ x
+
 ### fInacc will be fed to filters and KNet, note that the mismatch comes from delta_t and J_mod
 def fInacc(x, jacobian=False):
     BX = torch.zeros([x.shape[0],m,m]).float().to(x.device) #[batch_size, m, m]
@@ -131,6 +153,22 @@ def fInacc(x, jacobian=False):
         return torch.bmm(F, x), F
     else:
         return torch.bmm(F, x)
+    
+def fInacc_nobatch(x, jacobian = False):
+    '''
+        Sequential version of the rotated state matrix F (Inaccuracy case)
+    '''
+    Const = C.to(x.device)
+    A = torch.add(x, Const)     
+    # Taylor Expansion for F    
+    F = torch.eye(m).to(x.device)
+    for j in range(1,J_mod+1):
+        F_add = (torch.matrix_power(A*delta_t, j)/math.factorial(j))
+        F = torch.add(F, F_add)
+    if jacobian:
+        return torch.matmul(F, x), F
+    else:
+        return torch.matmul(F, x)
 
 ### fInacc will be fed to filters and KNet, note that the mismatch comes from delta_t and rotation
 def fRotate(x, jacobian=False):
@@ -152,6 +190,23 @@ def fRotate(x, jacobian=False):
     else:
         return torch.bmm(F_rotated, x)
 
+
+def fRotate_nobatch(x, jacobian = False):
+    '''
+        Sequential version of the rotated state matrix F (Rotation mismatch case)
+    '''
+    Const = C.to(x.device)
+    A = torch.add(x, Const)   
+    # Taylor Expansion for F    
+    F = torch.eye(m).to(x.device)
+    for j in range(1,J+1):
+        F_add = (torch.matrix_power(A*delta_t, j)/math.factorial(j))
+        F = torch.add(F, F_add)
+    F_rotated = torch.matmul(RotMatrix, F)
+    if jacobian:
+        return torch.matmul(F_rotated, x), F_rotated
+    else:
+        return torch.matmul(F_rotated, x)
 ##################################################
 ### Observation function h for Lorenz Atractor ###
 ##################################################
@@ -187,6 +242,9 @@ def hRotate_nobatch(x, jacobian = False):
     
 
 def h_nobatch(x, jacobian=False):
+    '''
+        No batch version of the state to output matrix H (identity in the generic case)
+    '''
     H = H_design.to(x.device)
     y = torch.matmul(H,x)
     if jacobian:

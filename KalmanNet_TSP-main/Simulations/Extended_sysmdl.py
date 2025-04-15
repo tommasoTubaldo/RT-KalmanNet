@@ -151,6 +151,7 @@ class SystemModel:
     ### Generate Batch ###
     ######################
     def GenerateBatch(self, args, size, T, randomInit=False):
+        # size = N_E in code -> Number of sequences (batch size)
         if(randomInit):
             # Allocate Empty Array for Random Initial Conditions
             self.m1x_0_rand = torch.zeros(size, self.m, 1)
