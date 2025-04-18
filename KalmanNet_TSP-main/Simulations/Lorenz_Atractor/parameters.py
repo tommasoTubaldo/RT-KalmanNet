@@ -94,46 +94,7 @@ def f(x, jacobian=False):
         return torch.bmm(F, x), F
     else:
         return torch.bmm(F, x)
-    
-'''
-def f_nobatch(x):
-    B = torch.zeros(3,3)
-    Const = C.to(x.device)
-    A = torch.add(B, Const) 
-    x_temp = x.squeeze()
-    A[1, 2] = -x_temp[1]
-    A[2, 1] = x_temp[1]
-    # Taylor Expansion for F    
-    F = torch.eye(m).to(x.device)
-    for j in range(1,J+1):
-        F_add = (torch.matrix_power(A*delta_t, j)/math.factorial(j))
-        F = torch.add(F, F_add)
 
-    return torch.matmul(F, x)
-'''
-
-def f_nobatch(x):
-    B = torch.zeros(3, 3, device=x.device)
-    Const = C.to(x.device)
-
-    A = B + Const  # or A = Const.clone() if Const is a leaf tensor
-
-    x_temp = x.view(-1)  # or x.squeeze()
-
-    # Instead of in-place assignment, use out-of-place construction:
-    A = A.clone()  # ensure we’re not modifying a leaf or shared tensor
-    A = A + torch.tensor([
-        [0., 0., 0.],
-        [0., 0., -x_temp[1]],
-        [0., x_temp[1], 0.]
-    ], device=x.device)
-
-    F = torch.eye(m, device=x.device)
-    for j in range(1, J + 1):
-        F_add = (torch.matrix_power(A * delta_t, j) / math.factorial(j))
-        F = F + F_add
-
-    return F @ x
 
 ### fInacc will be fed to filters and KNet, note that the mismatch comes from delta_t and J_mod
 def fInacc(x, jacobian=False):
@@ -153,22 +114,6 @@ def fInacc(x, jacobian=False):
         return torch.bmm(F, x), F
     else:
         return torch.bmm(F, x)
-    
-def fInacc_nobatch(x, jacobian = False):
-    '''
-        Sequential version of the rotated state matrix F (Inaccuracy case)
-    '''
-    Const = C.to(x.device)
-    A = torch.add(x, Const)     
-    # Taylor Expansion for F    
-    F = torch.eye(m).to(x.device)
-    for j in range(1,J_mod+1):
-        F_add = (torch.matrix_power(A*delta_t, j)/math.factorial(j))
-        F = torch.add(F, F_add)
-    if jacobian:
-        return torch.matmul(F, x), F
-    else:
-        return torch.matmul(F, x)
 
 ### fInacc will be fed to filters and KNet, note that the mismatch comes from delta_t and rotation
 def fRotate(x, jacobian=False):
@@ -190,23 +135,108 @@ def fRotate(x, jacobian=False):
     else:
         return torch.bmm(F_rotated, x)
 
+'''
+
+    NO Batch translations of the functions used by the KalmanNet paper
+
+'''
+
+def f_nobatch(x):
+    B = torch.zeros(3, 3, device=x.device)
+    Const = C.to(x.device)
+
+    A = B + Const  # or A = Const.clone() if Const is a leaf tensor
+
+    x_temp = x.view(-1)  # or x.squeeze()
+
+    # Instead of in-place assignment, use out-of-place construction:
+    A = A.clone()  # ensure we’re not modifying a leaf or shared tensor
+    '''
+    A = A + torch.tensor([
+        [0., 0., 0.],
+        [0., 0., -x_temp[1]],
+        [0., x_temp[1], 0.]
+    ], device=x.device)
+    '''
+    # It seems due to the particular output that the output of the batch is only x thus the state
+    # Matrix A seems a bit inverted but should satisfy the regular Lorentz equations
+    # see: https://en.wikipedia.org/wiki/Lorenz_system
+    A = A + torch.tensor([
+        [0., 0., 0.],
+        [-x_temp[2], 0., 0.],
+        [x_temp[1], 0., 0.]
+    ], device=x.device)
+
+    F = torch.eye(m, device=x.device)
+    for j in range(1, J + 1):
+        F_add = (torch.matrix_power(A * delta_t, j) / math.factorial(j))
+        F = F + F_add
+
+    return F @ x
+
+
+def fInacc_nobatch(x, jacobian = False):
+    '''
+        Sequential version of the rotated state matrix F (Inaccuracy case)
+    '''
+    B = torch.zeros(3, 3, device=x.device)
+    Const = C.to(x.device)
+
+    A = B + Const  # or A = Const.clone() if Const is a leaf tensor
+
+    x_temp = x.view(-1)  # or x.squeeze()
+
+    # Instead of in-place assignment, use out-of-place construction:
+    A = A.clone()  # ensure we’re not modifying a leaf or shared tensor
+    # It seems due to the particular output that the output of the batch is only x thus the state
+    # Matrix A seems a bit inverted but should satisfy the regular Lorentz equations
+    # see: https://en.wikipedia.org/wiki/Lorenz_system
+    A = A + torch.tensor([
+        [0., 0., 0.],
+        [-x_temp[2], 0., 0.],
+        [x_temp[1], 0., 0.]
+    ], device=x.device)
+
+    F = torch.eye(m, device=x.device)
+    for j in range(1, J_mod + 1):
+        F_add = (torch.matrix_power(A * delta_t, j) / math.factorial(j))
+        F = F + F_add
+
+    return F @ x
+
 
 def fRotate_nobatch(x, jacobian = False):
     '''
         Sequential version of the rotated state matrix F (Rotation mismatch case)
     '''
+    B = torch.zeros(3, 3, device=x.device)
     Const = C.to(x.device)
-    A = torch.add(x, Const)   
-    # Taylor Expansion for F    
-    F = torch.eye(m).to(x.device)
-    for j in range(1,J+1):
-        F_add = (torch.matrix_power(A*delta_t, j)/math.factorial(j))
-        F = torch.add(F, F_add)
-    F_rotated = torch.matmul(RotMatrix, F)
-    if jacobian:
-        return torch.matmul(F_rotated, x), F_rotated
-    else:
-        return torch.matmul(F_rotated, x)
+
+    A = B + Const  # or A = Const.clone() if Const is a leaf tensor
+
+    x_temp = x.view(-1)  # or x.squeeze()
+
+    # Instead of in-place assignment, use out-of-place construction:
+    A = A.clone()  # ensure we’re not modifying a leaf or shared tensor
+    # It seems due to the particular output that the output of the batch is only x thus the state
+    # Matrix A seems a bit inverted but should satisfy the regular Lorentz equations
+    # see: https://en.wikipedia.org/wiki/Lorenz_system
+    A = A + torch.tensor([
+        [0., 0., 0.],
+        [-x_temp[2], 0., 0.],
+        [x_temp[1], 0., 0.]
+    ], device=x.device)
+
+    F = torch.eye(m, device=x.device)
+    
+    for j in range(1, J + 1):
+        F_add = (torch.matrix_power(A * delta_t, j) / math.factorial(j))
+        F = F + F_add
+        
+    F = torch.matmul(RotMatrix, F)
+    
+    return F @ x
+
 ##################################################
 ### Observation function h for Lorenz Atractor ###
 ##################################################
