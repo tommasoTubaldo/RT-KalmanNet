@@ -17,11 +17,6 @@ Updated TO_DO:  Sasa -> Implement and test Lorenz Attractor for both models
                 Ricky -> Write the one page presentation with two main tables, one for each ss model, each composed by two main colums, one for KNet and one for RT_KNet.
                          Add the plots for the c_t realizations too.(tabella fatta)
 
-TO DO: 21/04/2025 (monday)
-- use training sequences longer to see if convergence effect can bi mitigated
-- see how the mse is computed in kalmanet (if they throw away the convergence part)
--end the presentation outline and set the meeting
-
 
 --------------------------------------------------------PRESENTATION OUTLINE------------------------------------------------------------------------------------------------
 1) Recall the requested task in the last meeting
@@ -36,7 +31,11 @@ TO DO: 21/04/2025 (monday)
 	data, has a deterministic and fixed C_t which does not vary over time learning from data, KalmanNet is faster than the other two models and this 
 	is expected because a DNN is more complex w.r.t to the GRU and in addition we think they use more optimized functions w.r.t to us
 	
-	-Lorenz attractor , for what concern the computational time the same considerations as above holds.	
+	-Lorenz attractor , for what concern the computational time the same considerations as above holds. Note that with this experiment RT-Kalmanet
+	seems to perform worse compared w.r.t the other models, however the problem is only in the initial phase (ten samples more or less), in fact
+	looking at the graphs we can see that the estimated trajectory is very similar to the actual one after the initial phase (show the graps). 
+	Furthermore, remember that this mismatch in the initial phase changes the AVG. MSE but also the STD MSE. To show this let's take look at 
+	the truncated MSE (here we avoid the initial pahse to evaluate the MSE)
 
 5) Explain the code, in particular show:
 	-show how to create a parameters.py for the required model -> specifically stay aware of the f and h functions -> (computational graph problems) 
