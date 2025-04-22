@@ -1,55 +1,3 @@
-Tasks that everyone has to do:
--read the two papers and write down questions to discuss (any question is very important)
--understand the relation between c_t (value of ambiguity set) and K_t (kalman gain)
-
-Sasa obradovic:
--translation of Zorzi's code
-
-Tommaso tubaldo:
--understand kalmannet code and see what can be reused for our purpose
-
-
-Riccardo Zattra:
--understand kalmannet code and see what can be reused for our purpose
-
-
-TODO:
-1) Mettere if statement per ogni variabile interessata in base al fatto che si usi la rete neurale o no (classe RobustKalman()) - SASA - Done/There is not much needed to change here
-2) Inserire modello sysnthetic NL model ( non cambiare nomi nel file parameters.py) + capire se il jacobiano numerico dà problemi (se si calcolarlo a mano) - SASA - Done/ The jacobian changes absolutely nothing 
-3) Trovare un allenamento della rete che va bene (provare ReLU al posto di Sigmoid sull'ultimo layer) - Tommaso 
-4) Fare plot vari e calcolare inference time (MSE, Inference Time, Loss, State Pred vs State Ground Truth) - Tommaso
-5) Pulire codice da commenti che non fanno nulla - SASA - Done
-6) Riprovare codice KalmanNet con synthetic NL model e aggiungere un paio di grafici anche per quello - Tommaso
-7) Cambiare parametri REKF 
-8) Fare una riunione con Zorzi - Tutti insieme
-
-MATLAB CODE FOR THE HARD CODED JACOBIAN OF THE SYNTH NON-LIN MODEL
-%% Needs the symbolic math toolbox
-syms x1 x2 alpha beta phi delta a b c
-
-
-f(x1, x2) = alpha*sin(beta*[x1; x2] + phi) + delta
-f_jac = jacobian(f(x1, x2), [x1, x2])
-
-h(x1, x2) = a * ( b* [x1; x2] + c).^2 
-h_jac = jacobian(h(x1, x2), [x1, x2])
-
-
-###  Update Meeting 10-03-2025  ###
-TO_DO: 1) Implement comparison of the three set of features: {F1,F2,F4}, {F1,F3,F4} and {F1,F2,F3,F4}
-       2) Refine the test procedure by evaluating ~20 test iterations and then taking the average of such result
-       3) Implement the comparison of Hard-coded VS Numerical Jacobian computation
-       4) Try to change number of hidden layers and neurons
-
-
-###  Results  ###
-1) Compare input features:
-       {F2} -> MSE: 0.0011 Computational Time: 0.1142
-       {F1,F2,F4} -> MSE: 0.0011 Computational Time: 0.1120
-       {F1,F3,F4} -> MSE: 0.0011 Computational Time: 0.1457
-       {F1,F2,F3,F4} -> MSE: 0.0011 Computational Time: 0.1455
-
-
 ###  Update Meeting 26-03-2025  ###
 TO_DO: - Test out RT-KalmanNet vs KalmanNet, by evaluating both set of features available ({F1,F2,F4}, {F1,F3,F4})** on
          the Synthetic NL model and the Lorenz attractor.
@@ -68,3 +16,29 @@ Updated TO_DO:  Sasa -> Implement and test Lorenz Attractor for both models
                 Tommi -> Evaluate MSE, ... using pandas to save them (additionally test different Q and R to test out the robustness of RT_KNet)
                 Ricky -> Write the one page presentation with two main tables, one for each ss model, each composed by two main colums, one for KNet and one for RT_KNet.
                          Add the plots for the c_t realizations too.(tabella fatta)
+
+
+--------------------------------------------------------PRESENTATION OUTLINE------------------------------------------------------------------------------------------------
+1) Recall the requested task in the last meeting
+2) Specify that we have benchmarked the two archs also with REKF (which was not requested)
+3) Summary of what we have added on the code. In particular we have done:
+	- Lorenz atractor implementation for the three arcs
+	- we have inserted graphs for C_t in RT-KalmanNet
+	- improvements of data visualization ( Created dataframe to acquire all MSE and computational time for the three archs and for both models)
+	
+4) Explain the obtained results (specify the following observations):
+	-Synthetic NL model: RT-KalmanNet and Kalman-Net performs better compared with REKF this is expected because the last one is not learning from
+	data, has a deterministic and fixed C_t which does not vary over time learning from data, KalmanNet is faster than the other two models and this 
+	is expected because a DNN is more complex w.r.t to the GRU and in addition we think they use more optimized functions w.r.t to us
+	
+	-Lorenz attractor , for what concern the computational time the same considerations as above holds. Note that with this experiment RT-Kalmanet
+	seems to perform worse compared w.r.t the other models, however the problem is only in the initial phase (ten samples more or less), in fact
+	looking at the graphs we can see that the estimated trajectory is very similar to the actual one after the initial phase (show the graps). 
+	Furthermore, remember that this mismatch in the initial phase changes the AVG. MSE but also the STD MSE. To show this let's take look at 
+	the truncated MSE (here we avoid the initial pahse to evaluate the MSE)
+
+5) Explain the code, in particular show:
+	-show how to create a parameters.py for the required model -> specifically stay aware of the f and h functions -> (computational graph problems) 
+	-Go to the notebook and show how it works for us -> how to import the model and launch it -> creating of the datasets -> changing the architecture
+		-> training and validating the RT Kalmanet
+	- a quick overview of the files robust_kalman.py and RT_KalmanNet_nn.py (first translation of REKF and second specify the NN architecture)
