@@ -147,7 +147,7 @@ class KalmanNetNN(torch.nn.Module):
         self.m1x_prior = self.f(self.m1x_posterior) #x_hat_t|t-1
 
         # Predict the 1-st moment of y
-        self.m1y = self.h(self.m1x_prior)#y_hat_t|t-1
+        self.m1y = self.h(self.m1x_prior)   #y_hat_t|t-1
 
     ##############################
     ### Kalman Gain Estimation ###

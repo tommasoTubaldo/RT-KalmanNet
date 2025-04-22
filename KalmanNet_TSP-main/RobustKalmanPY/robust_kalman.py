@@ -38,8 +38,12 @@ class RobustKalman():
         if self.use_nn:
             self.Xrekf = torch.zeros(self.n, self.T+1, requires_grad=True) 
         else:
-            self.Xrekf = torch.zeros(self.n, self.T+1)  
-            
+            self.Xrekf = torch.zeros(self.n, self.T+1)
+
+        """
+        with torch.no_grad():
+            self.Xrekf[:,0] = self.x0.squeeze(0)
+        """
         self.Xrekf_prev = self.x0.squeeze(0)
         self.y_prev = torch.zeros(self.p)
         self.Xn_prev = torch.zeros(self.n)
@@ -164,7 +168,7 @@ class RobustKalman():
 
             # P_t+1
             P = self.A[:, :, i] @ self.V_prev @ torch.transpose(self.A[:, :, i], 0, 1) - self.A[:, :,i] @ self.V_prev @ torch.transpose(self.C[:, :, i], 0, 1) @ torch.linalg.solve(self.C[:, :, i] @ self.V_prev @ torch.transpose(self.C[:, :, i], 0, 1) + self.R,torch.eye(self.p)) @ self.C[:, :, i] @ self.V_prev @ torch.transpose(self.A[:, :, i], 0, 1) + self.Q
-            #print(P)
+
             if self.use_nn:
                 # Compute input features F1,F2,F3,F4
                 self.f1 = self.y[:,i] - self.y_prev

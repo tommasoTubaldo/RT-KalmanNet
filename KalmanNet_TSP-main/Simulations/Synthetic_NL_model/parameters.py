@@ -19,7 +19,8 @@ n = 2 #dimension of the output
 #variance = 0
 
 #first order and second order moment of the initial condition
-m1x_0 = torch.ones(m, 1) 
+m1x_0 = torch.ones(m, 1)
+#m1x_0 = torch.zeros(m, 1)
 m2x_0 = 0 * 0 * torch.eye(m)
 
 #defining parameters for the dynamics see paper pag.10

@@ -33,14 +33,14 @@ print("Current Time =", strTime)
 ###################
 args = config.general_settings()
 ### dataset parameters
-args.N_E = 1000 #length of training dataset 
+args.N_E = 1000 #length of training dataset
 args.N_CV = 100 #length of validation dataset
 args.N_T = 200 #length of test dataset
 args.T = 100 #input sequence length 
 args.T_test = 100 #input test sequence length 
 
 ### training parameters
-args.use_cuda = True # use GPU or not (True = use GPU)
+args.use_cuda = False # use GPU or not (True = use GPU)
 args.n_steps =  30 #number of training steps (default: 1000) 2000
 args.n_batch = 30 #input batch size for training (default: 20)
 args.lr = 1e-3 #learning rate (default: 1e-3)
@@ -61,7 +61,7 @@ chop = False # whether to chop data sequences into shorter sequences
 path_results = 'KNet/'
 DatafolderName = 'Simulations/Lorenz_Atractor/data' + '/'
 #flag that will be used later on in the code
-switch = 'partial' # 'full' or 'partial' or 'estH'v 
+switch = 'full' # 'full' or 'partial' or 'estH'v
 
 # noise q and r
 r2 = torch.tensor([0.1]) # [100, 10, 1, 0.1, 0.01]
@@ -97,7 +97,7 @@ if chop:
 else:
    print("no chopping") 
    train_target = train_target_long[:,:,0:args.T]
-   train_input = train_input_long[:,:,0:args.T] 
+   train_input = train_input_long[:,:,0:args.T]
    # cv_target = cv_target[:,:,0:args.T]
    # cv_input = cv_input[:,:,0:args.T]  
 
