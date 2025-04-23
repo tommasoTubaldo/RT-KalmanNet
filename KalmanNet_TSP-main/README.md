@@ -1,4 +1,27 @@
-# KalmanNet
+## RT - KalmanNet - SHORT DESCRIPTION
+
+## The important (newly implemented/modified) files for the project are:
+
+# main_Robust_KNet.ipynb
+    - It is the main jupyter notebook used for plotting and evaluating the different types of filters implemented
+
+# RobustKalmanPY/robust_kalman.py
+    - Contains the REKF translated code from MATLAB and the RT-KalmanNet 
+    
+# KNet/RT_KalmanNet_nn.py
+    - Contains the implemented Neural Network structure used in the robust_kalmanet.py filter
+
+# Simulations/Synthetic_NL_model/parameters.py
+    - Contains the definition of the Synthetic Non-Linear model used for evaluating the filter
+
+# Simulations/Lorenz_Atractor/parameters.py
+    - Contains the definition of the Lorenz-Atractor model used for evaluating the filter
+    - This file derives from the original paper file but is modified to contain the no_batch implementations of functions f(x) and h(x)
+## 
+## 
+## 
+
+## KalmanNet 
 
 ## Feb.13, 2023 Update "batched"
 
