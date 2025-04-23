@@ -81,11 +81,6 @@ class RobustKalman():
         if self.hard_coded:
             f_jac = torch.tensor([[self.model.alpha*self.model.beta*(torch.cos(self.model.phi+ self.model.beta*x_n_temp[0])), 0],[0, self.model.alpha*self.model.beta*(torch.cos(self.model.phi+ self.model.beta*x_n_temp[1]))]])
         else:
-            '''
-            if self.sl_model == 1:
-                f_jac = torch.squeeze(torch.autograd.functional.jacobian(self.model.f, x_n_temp))
-            else:
-            '''
             f_jac = torch.autograd.functional.jacobian(self.model.f, x_n_temp)
         return f_jac
     
@@ -145,12 +140,7 @@ class RobustKalman():
 
             # \hat x_t|t
             self.Xn[:, i] = self.Xrekf_prev + (L @ (self.y[:, i] - hn))
-            '''
-            if self.sl_model == 1:
-                # A_t
-                self.A[:, :, i] = self.fnComputeJacobianF(self.Xn[:, i].reshape(1,3,1))
-            else:
-                '''
+
             # A_t
             self.A[:, :, i] = self.fnComputeJacobianF(self.Xn[:, i])
 
@@ -159,11 +149,7 @@ class RobustKalman():
 
             # \hat x_t+1
             self.Xrekf = self.Xrekf.clone()
-            '''
-            if self.sl_model == 1:
-                self.Xrekf[:, i + 1] = torch.squeeze(self.model.f(self.Xn[:, i].reshape(1,3,1)))
-            else:
-            '''
+
             self.Xrekf[:, i + 1] = torch.squeeze(self.model.f(self.Xn[:, i]))
 
             # P_t+1
