@@ -19,26 +19,30 @@ Updated TO_DO:  Sasa -> Implement and test Lorenz Attractor for both models
 
 
 --------------------------------------------------------PRESENTATION OUTLINE------------------------------------------------------------------------------------------------
-1) Recall the requested task in the last meeting
-2) Specify that we have benchmarked the two archs also with REKF (which was not requested)
+1) Recall the requested task in the last meeting (RIKI)
+2) Specify that we have benchmarked the two archs also with REKF (which was not requested) (RIKI)
 3) Summary of what we have added on the code. In particular we have done:
-	- Lorenz atractor implementation for the three arcs
-	- we have inserted graphs for C_t in RT-KalmanNet
-	- improvements of data visualization ( Created dataframe to acquire all MSE and computational time for the three archs and for both models)
+	- Lorenz atractor implementation for the three arcs (SASA)
+	- we have inserted graphs for C_t in RT-KalmanNet (TOMMY)
+	- improvements of data visualization ( Created dataframe to acquire all MSE and computational time for the three archs and for both models) (TOMMY)
 	
-4) Explain the obtained results (specify the following observations):
+4) Explain the obtained results (specify the following observations): (RIKI, TOMMY, SASA)
 	-Synthetic NL model: RT-KalmanNet and Kalman-Net performs better compared with REKF this is expected because the last one is not learning from
 	data, has a deterministic and fixed C_t which does not vary over time learning from data, KalmanNet is faster than the other two models and this 
-	is expected because a DNN is more complex w.r.t to the GRU and in addition we think they use more optimized functions w.r.t to us
+	is expected because a DNN is more complex w.r.t to the GRU and in addition we think they use more optimized functions w.r.t to us. Remember also
+	that the computational time of RT-KalmanNet is lower bounded by the computational time of REKF. A possible improvement is optimize the DNN
+	processing and the part of REKF trying to find more ad hoc function for the various tasks focusing on computational efficiency.
 	
 	-Lorenz attractor , for what concern the computational time the same considerations as above holds. Note that with this experiment RT-Kalmanet
 	seems to perform worse compared w.r.t the other models, however the problem is only in the initial phase (ten samples more or less), in fact
 	looking at the graphs we can see that the estimated trajectory is very similar to the actual one after the initial phase (show the graps). 
 	Furthermore, remember that this mismatch in the initial phase changes the AVG. MSE but also the STD MSE. To show this let's take look at 
-	the truncated MSE (here we avoid the initial pahse to evaluate the MSE)
+	the truncated MSE (here we avoid the initial pahse to evaluate the MSE). Maybe it is possible to improve the performances of RT-KalmanNet
+	by creating a deeper DNN, but this will increase the computational time which is not good for real time applications. However, given the 
+	sequential nature of the data it should be worth trying to use a reccurent model to estimate C_t, like LSTM or GRU.
 
 5) Explain the code, in particular show:
-	-show how to create a parameters.py for the required model -> specifically stay aware of the f and h functions -> (computational graph problems) 
+	-show how to create a parameters.py for the required model -> specifically stay aware of the f and h functions -> (computational graph problems) (RIKI)
 	-Go to the notebook and show how it works for us -> how to import the model and launch it -> creating of the datasets -> changing the architecture
-		-> training and validating the RT Kalmanet
-	- a quick overview of the files robust_kalman.py and RT_KalmanNet_nn.py (first translation of REKF and second specify the NN architecture)
+		-> training and validating the RT Kalmanet (TOMMY)
+	- a quick overview of the files robust_kalman.py (SASA) and RT_KalmanNet_nn.py(RIKI) (first translation of REKF and second specify the NN architecture)
