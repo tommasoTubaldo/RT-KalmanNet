@@ -10,8 +10,9 @@ In recent years, data-driven formulations of the Kalman filter have addressed th
 
 The objective of the project is to extend the capability of the REKF, in particular by adopting a NN module for the estimation of the tolerance $c_t$.
 
+
 <p align="center">
-  <img width="1260" alt="RT-KalmanNet diagram" src="https://github.com/user-attachments/assets/166b6d2f-e668-4839-a927-e7b5fbd3f5a3" />
+  <img width="1260" alt="Screenshot 2025-06-14 alle 22 37 05" src="https://github.com/user-attachments/assets/de7f1cbd-41b6-4aea-b799-cb694b5a6ff9" />
   <br>
   <em>Figure 1: RT-KalmanNet diagram.</em>
 </p>
