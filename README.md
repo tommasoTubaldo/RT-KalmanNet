@@ -1,6 +1,6 @@
-Final project of the course **"Learning Dynamical Systems"** regarding the implementation and evaluation of a Robust Tailored KalmanNet.
+## RT-KalmanNet: A Robust Tailored Neural Network Aided Kalman Filtering Approach
 
-## Abstract
+### Abstract
 
 The well-known SOTA model for non-linear state estimation is the Extended Kalman Filter [1–3]. However, if the knowledge of the noise covariances is not available or there are model uncertainties, the EKF performs poorly due to lack of robustness.
 
